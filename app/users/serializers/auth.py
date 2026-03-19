@@ -22,6 +22,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["full_name"] = user.get_full_name()
         token["is_staff"] = user.is_staff
         token["email_verified"] = user.email_verified
+        token["role"] = user.role
         token["user_id"] = str(user.id)
 
         return token
@@ -48,6 +49,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     "full_name": self.user.get_full_name(),
                     "is_staff": self.user.is_staff,
                     "email_verified": self.user.email_verified,
+                    "role": self.user.role,
                     "date_joined": self.user.date_joined,
                     "last_login": self.user.last_login,
                     "avatar": avatar_url,
@@ -113,6 +115,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "gender",
             "avatar_path",
             "email_verified",
+            "role",
             "date_joined",
             "last_login",
         ]

@@ -34,6 +34,7 @@ class UserRegistrationView(generics.CreateAPIView):
             token["full_name"] = user.get_full_name()
             token["is_staff"] = user.is_staff
             token["email_verified"] = user.email_verified
+            token["role"] = user.role
             token["user_id"] = str(user.id)
 
         return Response(
@@ -49,6 +50,7 @@ class UserRegistrationView(generics.CreateAPIView):
                     "full_name": user.get_full_name(),
                     "is_staff": user.is_staff,
                     "email_verified": user.email_verified,
+                    "role": user.role,
                     "date_joined": user.date_joined,
                     "last_login": user.last_login,
                     "avatar": None,

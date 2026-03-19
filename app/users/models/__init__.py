@@ -47,6 +47,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("P", "Prefer not to say"),
     ]
 
+    ROLE_CHOICES = [
+        ("user", "User"),
+        ("admin", "Admin"),
+        ("moderator", "Moderator"),
+    ]
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -92,6 +98,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         "Gender", max_length=1, choices=GENDER_CHOICES, blank=True
     )
     avatar = models.ImageField("Avatar", upload_to="avatars/", blank=True, null=True)
+
+    # Role
+    role = models.CharField(
+        "Role",
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default="user",
+    )
 
     # System fields
     is_active = models.BooleanField("Active", default=True)

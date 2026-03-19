@@ -120,6 +120,19 @@ class Migration(migrations.Migration):
                     models.BooleanField(default=False, verbose_name="Email verified"),
                 ),
                 (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("user", "User"),
+                            ("admin", "Admin"),
+                            ("moderator", "Moderator"),
+                        ],
+                        default="user",
+                        max_length=20,
+                        verbose_name="Role",
+                    ),
+                ),
+                (
                     "groups",
                     models.ManyToManyField(
                         blank=True,
