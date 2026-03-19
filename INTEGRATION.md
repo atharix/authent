@@ -48,7 +48,7 @@ Cada request a `/api/` requiere dos niveles de identificación:
 
 | Entorno | URL base |
 |---------|----------|
-| Desarrollo | `http://localhost:8003` |
+| Desarrollo | `http://localhost:8020` |
 | Producción | `https://<dominio-produccion>` |
 
 Todos los endpoints tienen el prefijo `/api/auth/`.
@@ -699,7 +699,7 @@ DELETE /api/auth/sessions/revoke_all/
 
 ```bash
 # Iris realizando login de un usuario
-curl -X POST http://localhost:8003/api/auth/login/ \
+curl -X POST http://localhost:8020/api/auth/login/ \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ak_iris00000000000000000000000000000000000000000000" \
   -d '{"email": "usuario@ejemplo.com", "password": "contraseña123"}'
@@ -708,7 +708,7 @@ curl -X POST http://localhost:8003/api/auth/login/ \
 ### Obtener perfil con curl
 
 ```bash
-curl http://localhost:8003/api/auth/profile/ \
+curl http://localhost:8020/api/auth/profile/ \
   -H "Authorization: Bearer <access_token>" \
   -H "X-API-Key: ak_iris00000000000000000000000000000000000000000000"
 ```
@@ -716,7 +716,7 @@ curl http://localhost:8003/api/auth/profile/ \
 ### Renovar token con curl
 
 ```bash
-curl -X POST http://localhost:8003/api/auth/token/refresh/ \
+curl -X POST http://localhost:8020/api/auth/token/refresh/ \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ak_atlas0000000000000000000000000000000000000000000" \
   -d '{"refresh": "<refresh_token>"}'
@@ -725,7 +725,7 @@ curl -X POST http://localhost:8003/api/auth/token/refresh/ \
 ### Cliente JavaScript (fetch)
 
 ```javascript
-const BASE_URL = 'http://localhost:8003';
+const BASE_URL = 'http://localhost:8020';
 const API_KEY = 'ak_iris00000000000000000000000000000000000000000000';
 
 // Login
@@ -788,7 +788,7 @@ async function refreshToken(refreshToken) {
 
 | Recurso | URL |
 |---------|-----|
-| Swagger UI (desarrollo) | `http://localhost:8003/api/docs/` |
-| ReDoc (desarrollo) | `http://localhost:8003/api/redoc/` |
-| OpenAPI schema JSON | `http://localhost:8003/api/schema/` |
-| Panel de administración | `http://localhost:8003/admin/` |
+| Swagger UI (desarrollo) | `http://localhost:8020/api/docs/` |
+| ReDoc (desarrollo) | `http://localhost:8020/api/redoc/` |
+| OpenAPI schema JSON | `http://localhost:8020/api/schema/` |
+| Panel de administración | `http://localhost:8020/admin/` |
