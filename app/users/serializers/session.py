@@ -1,8 +1,11 @@
 """Serializers for user session management."""
 
+from datetime import datetime, timezone as dt_timezone
+
 from rest_framework import serializers
 
 from users.models.session import UserSession
+from users.utils.session import get_client_ip, hash_token, parse_user_agent
 
 
 class UserSessionSerializer(serializers.ModelSerializer):
@@ -65,35 +68,64 @@ class UserSessionSerializer(serializers.ModelSerializer):
 
 
 class CreateUserSessionSerializer(serializers.ModelSerializer):
-    """Serializer for creating a new session with device information from client."""
+    """Serializer for creating a new session.
+
+    The client only provides device information. All JWT-derived and
+    network fields are extracted server-side from the request.
+    """
 
     class Meta:
         model = UserSession
         fields = [
-            "jti",
-            "refresh_token_hash",
             "device_name",
             "device_type",
             "os_name",
             "os_version",
             "browser",
             "browser_version",
-            "user_agent",
-            "ip_address",
             "country",
             "city",
-            "expires_at",
         ]
+        extra_kwargs = {f: {"required": False} for f in fields}
 
     def validate(self, attrs):
         request = self.context.get("request")
-        if request:
-            if hasattr(request, "user"):
-                attrs["user"] = request.user
-            if hasattr(request, "api_key") and request.api_key is not None:
-                attrs["api_key"] = request.api_key
+        if not request:
+            raise serializers.ValidationError("Request context is required.")
+
+        # --- Server-derived fields from JWT token ---
+        auth = request.auth
+        if not auth:
+            raise serializers.ValidationError("Valid JWT token required.")
+
+        attrs["jti"] = auth["jti"]
+        exp_timestamp = auth.get("exp")
+        attrs["expires_at"] = datetime.fromtimestamp(exp_timestamp, tz=dt_timezone.utc)
+
+        # Hash jti as session identifier (refresh token not available at this point)
+        attrs["refresh_token_hash"] = hash_token(auth["jti"])
+
+        # --- Server-derived fields from request ---
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
+        attrs["user_agent"] = user_agent
+        attrs["ip_address"] = get_client_ip(request)
+
+        # Auto-parse device info from user-agent if client didn't provide it
+        if user_agent and not attrs.get("device_type"):
+            parsed = parse_user_agent(user_agent)
+            attrs.setdefault("device_type", parsed["device_type"])
+            attrs.setdefault("os_name", parsed["os_name"])
+            attrs.setdefault("os_version", parsed["os_version"])
+            attrs.setdefault("browser", parsed["browser"])
+            attrs.setdefault("browser_version", parsed["browser_version"])
+
+        # --- Ownership ---
+        attrs["user"] = request.user
+        if hasattr(request, "api_key") and request.api_key is not None:
+            attrs["api_key"] = request.api_key
+
         return attrs
 
     def create(self, validated_data):
         validated_data["is_active"] = True
-        return super().create(validated_data)
+        return UserSession.objects.create(**validated_data)
