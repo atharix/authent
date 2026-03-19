@@ -101,6 +101,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     full_name = serializers.SerializerMethodField()
     avatar_path = serializers.SerializerMethodField()
+    role = serializers.CharField(read_only=True)
 
     class Meta:
         model = User

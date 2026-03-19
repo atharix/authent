@@ -47,12 +47,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("P", "Prefer not to say"),
     ]
 
-    ROLE_CHOICES = [
-        ("user", "User"),
-        ("admin", "Admin"),
-        ("moderator", "Moderator"),
-    ]
-
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -99,14 +93,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     avatar = models.ImageField("Avatar", upload_to="avatars/", blank=True, null=True)
 
-    # Role
-    role = models.CharField(
-        "Role",
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default="user",
-    )
-
     # System fields
     is_active = models.BooleanField("Active", default=True)
     is_staff = models.BooleanField("Staff status", default=False)
@@ -137,6 +123,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.avatar:
             return self.avatar.url
         return None
+
+    @property
+    def role(self):
+        """Return the name of the user's primary group, or None if ungrouped."""
+        group = self.groups.first()
+        return group.name if group else None
 
 
 from .password_reset import PasswordReset  # noqa
