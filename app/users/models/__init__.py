@@ -126,9 +126,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def role(self):
-        """Return the name of the user's primary group, or None if ungrouped."""
-        group = self.groups.first()
-        return group.name if group else None
+        """Return 'superuser' if the user is a superuser, otherwise None."""
+        return "superuser" if self.is_superuser else None
 
 
 from .password_reset import PasswordReset  # noqa
