@@ -34,7 +34,7 @@ for arg in "$@"; do
   [[ "$arg" == "--no-pull" ]] && NO_PULL=true
 done
 
-COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
+COMPOSE="docker compose"
 
 # ── 1. Git pull ───────────────────────────────────────────────────────────────
 if [ "$NO_PULL" = false ]; then
