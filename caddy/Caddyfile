@@ -1,0 +1,51 @@
+authent.atharix.com {
+    encode zstd gzip
+
+    root * /srv/frontend
+
+    @static path /static/*
+    handle @static {
+        root * /srv/staticfiles
+        file_server
+        header Cache-Control "public, max-age=2592000"
+    }
+
+    @media path /media/*
+    handle @media {
+        root * /srv/media
+        file_server
+        header Cache-Control "public, max-age=604800"
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "same-origin"
+    }
+
+    handle /api/* {
+        reverse_proxy web:8000
+    }
+
+    handle /admin/* {
+        reverse_proxy web:8000
+    }
+
+    handle /health/ {
+        reverse_proxy web:8000
+    }
+
+    handle /ready/ {
+        reverse_proxy web:8000
+    }
+
+    handle /live/ {
+        reverse_proxy web:8000
+    }
+
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+}

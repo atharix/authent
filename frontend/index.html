@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Authent</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --panel: #fffaf4;
+        --text: #1b1f22;
+        --muted: #5d6670;
+        --accent: #d94f2b;
+        --line: rgba(27, 31, 34, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background:
+          radial-gradient(circle at top left, rgba(217, 79, 43, 0.16), transparent 28%),
+          linear-gradient(180deg, #f8f2ea 0%, var(--bg) 100%);
+        color: var(--text);
+        font-family: Georgia, "Times New Roman", serif;
+      }
+
+      main {
+        width: min(720px, 100%);
+        padding: 40px;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: 0 24px 80px rgba(27, 31, 34, 0.08);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.5rem, 7vw, 4.5rem);
+        line-height: 0.95;
+      }
+
+      p {
+        margin: 0;
+        max-width: 46ch;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+
+      strong {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Authent</h1>
+      <p>
+        El servidor ya esta preparado para servir el <strong>frontend en /</strong>.
+        Cuando subas la carpeta final del frontend, solo habra que reemplazar el contenido de esta ruta.
+      </p>
+    </main>
+  </body>
+</html>

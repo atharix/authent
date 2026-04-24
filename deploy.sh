@@ -35,11 +35,14 @@ for arg in "$@"; do
 done
 
 COMPOSE="docker compose"
+DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
+DEPLOY_HEALTH_URL="${DEPLOY_HEALTH_URL:-http://localhost:8004/health/}"
+DEPLOY_SITE_URL="${DEPLOY_SITE_URL:-${SITE_URL:-https://authent.atharix.com}}"
 
 # ── 1. Git pull ───────────────────────────────────────────────────────────────
 if [ "$NO_PULL" = false ]; then
-  log "Actualizando código desde git..."
-  git pull origin main || fail "Error al hacer git pull"
+  log "Actualizando código desde git (${DEPLOY_BRANCH})..."
+  git pull origin "$DEPLOY_BRANCH" || fail "Error al hacer git pull"
   ok "Código actualizado"
 else
   warn "Omitiendo git pull (--no-pull)"
@@ -60,7 +63,7 @@ log "Esperando que Django esté disponible..."
 RETRIES=20
 WAIT=3
 for i in $(seq 1 $RETRIES); do
-  STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health/ 2>/dev/null || echo "000")
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_HEALTH_URL" 2>/dev/null || echo "000")
   if [[ "$STATUS" == "200" ]]; then
     ok "Health check OK (HTTP 200)"
     break
@@ -76,7 +79,7 @@ done
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo -e "${GREEN}  Authent desplegado correctamente en producción ✓${RESET}"
-echo -e "${GREEN}  https://authent.atharix.com${RESET}"
+echo -e "${GREEN}  ${DEPLOY_SITE_URL}${RESET}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
 echo -e "  Logs:    ${CYAN}docker compose logs -f${RESET}"
