@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh -i ~/.ssh/authent_ed25519 -o StrictHostKeyChecking=accept-new root@authent.atharix.com \"pwd && ls ~/ && docker compose ls 2>/dev/null\")",
+      "Bash(ssh-keygen -R authent.atharix.com)",
+      "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com \"cd /opt/authent/backend && docker compose ps && echo '---' && docker compose exec -T web python manage.py showmigrations --plan 2>&1 | tail -30\")",
+      "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com \"cd /opt/authent/backend && docker compose exec -T web python manage.py showmigrations 2>&1 | grep -E '\\\\[ \\\\]' | head -30\")",
+      "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com \"cd /opt/authent/backend && docker compose exec -T web python manage.py migrate --noinput\")",
+      "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com \"cd /opt/authent/backend && ls fixtures/ 2>/dev/null\")",
+      "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com \"cd /opt/authent/backend && docker compose exec -T web python manage.py loaddata fixtures/groups.json fixtures/countries.json fixtures/initial_applications.json\")",
+      "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com 'cd /opt/authent/backend && docker compose exec -T web python manage.py shell')"
+    ]
+  }
+}

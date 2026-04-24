@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from corsheaders.defaults import default_headers
 from django.utils.translation import gettext_lazy as _
 
 env = environ.Env(DEBUG=(bool, False))
@@ -40,9 +41,14 @@ LOCAL_APPS = [
     "core",
     "users",
     "apps",
+    "business",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-api-key",
+]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

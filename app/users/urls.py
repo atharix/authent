@@ -7,19 +7,26 @@ from .views import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
     PasswordResetVerifyView,
+    TermsAndConditionsView,
     TokenVerifyView,
     UserLoginView,
     UserLogoutView,
     UserProfileView,
     UserRegistrationView,
     UserUpdateView,
+    accept_terms,
+    check_terms_acceptance,
 )
+from .views.groups import GroupViewSet
 from .views.session import UserSessionViewSet
+from .views.users_admin import UsersAdminViewSet
 
 app_name = "auth"
 
 router = DefaultRouter()
 router.register(r"sessions", UserSessionViewSet, basename="session")
+router.register(r"users", UsersAdminViewSet, basename="user-admin")
+router.register(r"groups", GroupViewSet, basename="group")
 
 urlpatterns = [
     # --- Authentication ---
@@ -52,6 +59,10 @@ urlpatterns = [
         PasswordChangeView.as_view(),
         name="password_change",
     ),
+    # --- Terms & conditions ---
+    path("terms/", TermsAndConditionsView.as_view(), name="terms"),
+    path("terms/check/", check_terms_acceptance, name="terms_check"),
+    path("terms/accept/", accept_terms, name="terms_accept"),
     # --- Session management ---
     path("", include(router.urls)),
 ]

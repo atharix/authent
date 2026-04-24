@@ -142,9 +142,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 from .password_reset import PasswordReset  # noqa
 from .session import UserSession  # noqa
+from .terms import TermsAndConditions, UserTermsAcceptance  # noqa
 
 __all__ = [
     "User",
     "UserSession",
     "PasswordReset",
+    "TermsAndConditions",
+    "UserTermsAcceptance",
 ]

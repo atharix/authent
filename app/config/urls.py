@@ -19,6 +19,9 @@ urlpatterns = [
     # API endpoints
     path("api/health/", health_check, name="api-health"),
     path("api/auth/", include("users.urls")),
+    path("api/auth/", include("apps.urls")),
+    path("api/core/", include("core.urls")),
+    path("api/core/", include("business.urls")),
     # API Schema & Docs
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

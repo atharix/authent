@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
-from .models import User
+from .models import TermsAndConditions, User, UserTermsAcceptance
 
 
 @admin.register(User)
@@ -162,3 +162,20 @@ class UserAdmin(BaseUserAdmin, ModelAdmin, ImagePreviewListDisplayMixin):
         return "No avatar"
 
     avatar_preview.short_description = "Avatar Preview"
+
+
+@admin.register(TermsAndConditions)
+class TermsAndConditionsAdmin(ModelAdmin):
+    list_display = ["version", "is_active", "published_at", "created_at"]
+    list_filter = ["is_active"]
+    search_fields = ["version"]
+    ordering = ["-created_at"]
+
+
+@admin.register(UserTermsAcceptance)
+class UserTermsAcceptanceAdmin(ModelAdmin):
+    list_display = ["user", "terms", "accepted_at", "ip_address"]
+    list_filter = ["terms"]
+    search_fields = ["user__email", "terms__version"]
+    ordering = ["-accepted_at"]
+    readonly_fields = ["accepted_at"]

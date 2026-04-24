@@ -10,3 +10,4 @@ This package contains separated serializer modules for better organization:
 from .auth import *
 from .registration import *
 from .password import *
+from .terms import *

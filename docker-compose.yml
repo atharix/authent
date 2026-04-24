@@ -121,4 +121,5 @@ networks:
   authent_network:
     driver: bridge
   atharix_shared:
-    external: true
+    name: ${ATHARIX_SHARED_NETWORK_NAME:-atharix_shared}
+    external: ${ATHARIX_SHARED_EXTERNAL:-false}
