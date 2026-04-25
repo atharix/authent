@@ -6,6 +6,6 @@ from .password import (
     PasswordResetVerifyView,
 )
 from .registration import UserRegistrationView, UserUpdateView
-from .terms import TermsAndConditionsView, accept_terms, check_terms_acceptance
+from .terms import TermsAndConditionsViewSet, accept_terms, check_terms_acceptance
 from .groups import GroupViewSet
 from .users_admin import UsersAdminViewSet

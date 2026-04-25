@@ -28,7 +28,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin, ImagePreviewListDisplayMixin):
         "gender",
     ]
     search_fields = ["email", "first_name", "last_name", "phone_number"]
-    ordering = ["-date_joined"]
+    ordering = ["first_name", "last_name"]
     readonly_fields = ["date_joined", "last_login", "avatar_preview"]
 
     fieldsets = (

@@ -3,9 +3,30 @@ from django.db import models
 
 
 class TermsAndConditions(models.Model):
-    """Versioned terms & conditions document."""
+    """Versioned legal document (terms or privacy policy) tied to an application."""
 
-    version = models.CharField(max_length=20, unique=True)
+    KIND_TERMS = "terms"
+    KIND_PRIVACY = "privacy"
+    KIND_CHOICES = [
+        (KIND_TERMS, "Términos y Condiciones"),
+        (KIND_PRIVACY, "Política de Privacidad"),
+    ]
+
+    application = models.ForeignKey(
+        "apps.Application",
+        on_delete=models.CASCADE,
+        related_name="legal_documents",
+        null=True,
+        blank=True,
+        help_text="Application this document belongs to. NULL = global / cross-app.",
+    )
+    kind = models.CharField(
+        max_length=20,
+        choices=KIND_CHOICES,
+        default=KIND_TERMS,
+    )
+    version = models.CharField(max_length=20)
+    title = models.CharField(max_length=255, blank=True, default="")
     content = models.TextField()
     is_active = models.BooleanField(default=False)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -14,16 +35,22 @@ class TermsAndConditions(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Terms and Conditions"
-        verbose_name_plural = "Terms and Conditions"
+        verbose_name = "Legal document"
+        verbose_name_plural = "Legal documents"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["application", "kind", "version"],
+                name="uniq_legal_doc_app_kind_version",
+            ),
+        ]
 
     def __str__(self) -> str:
-        status = "active" if self.is_active else "inactive"
-        return f"Terms v{self.version} ({status})"
+        scope = self.application.name if self.application_id else "global"
+        return f"{self.get_kind_display()} v{self.version} ({scope})"
 
 
 class UserTermsAcceptance(models.Model):
-    """Records a user's acceptance of a specific terms version."""
+    """Records a user's acceptance of a specific legal document version."""
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -44,4 +71,4 @@ class UserTermsAcceptance(models.Model):
         ordering = ["-accepted_at"]
 
     def __str__(self) -> str:
-        return f"{self.user} accepted v{self.terms.version}"
+        return f"{self.user} accepted {self.terms}"

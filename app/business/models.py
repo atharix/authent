@@ -10,7 +10,7 @@ class Business(BaseModel):
 
     name = models.CharField(max_length=255)
     legal_name = models.CharField(max_length=255, blank=True, default="")
-    tax_id = models.CharField(max_length=50, unique=True)
+    tax_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
     country = models.ForeignKey(
         "core.Country",
         on_delete=models.SET_NULL,

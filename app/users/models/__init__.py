@@ -123,6 +123,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = "User"
         verbose_name_plural = "Users"
         db_table = "beat_auth_user"
+        ordering = ["first_name", "last_name"]
 
     def __str__(self):
         return self.email

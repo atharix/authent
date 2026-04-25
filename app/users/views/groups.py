@@ -39,7 +39,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
-        queryset = Group.objects.all().annotate(users_count=Count("user"))
+        queryset = Group.objects.all().annotate(users_count=Count("beat_user"))
         search = self.request.query_params.get("search", "").strip()
         if search:
             queryset = queryset.filter(name__icontains=search)

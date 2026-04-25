@@ -7,7 +7,7 @@ from .views import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
     PasswordResetVerifyView,
-    TermsAndConditionsView,
+    TermsAndConditionsViewSet,
     TokenVerifyView,
     UserLoginView,
     UserLogoutView,
@@ -27,6 +27,7 @@ router = DefaultRouter()
 router.register(r"sessions", UserSessionViewSet, basename="session")
 router.register(r"users", UsersAdminViewSet, basename="user-admin")
 router.register(r"groups", GroupViewSet, basename="group")
+router.register(r"terms", TermsAndConditionsViewSet, basename="terms")
 
 urlpatterns = [
     # --- Authentication ---
@@ -59,8 +60,7 @@ urlpatterns = [
         PasswordChangeView.as_view(),
         name="password_change",
     ),
-    # --- Terms & conditions ---
-    path("terms/", TermsAndConditionsView.as_view(), name="terms"),
+    # --- Terms & conditions custom actions (must come before router) ---
     path("terms/check/", check_terms_acceptance, name="terms_check"),
     path("terms/accept/", accept_terms, name="terms_accept"),
     # --- Session management ---

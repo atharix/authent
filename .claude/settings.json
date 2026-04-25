@@ -8,7 +8,9 @@
       "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com \"cd /opt/authent/backend && docker compose exec -T web python manage.py migrate --noinput\")",
       "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com \"cd /opt/authent/backend && ls fixtures/ 2>/dev/null\")",
       "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com \"cd /opt/authent/backend && docker compose exec -T web python manage.py loaddata fixtures/groups.json fixtures/countries.json fixtures/initial_applications.json\")",
-      "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com 'cd /opt/authent/backend && docker compose exec -T web python manage.py shell')"
+      "Bash(ssh -i ~/.ssh/authent_ed25519 root@authent.atharix.com 'cd /opt/authent/backend && docker compose exec -T web python manage.py shell')",
+      "Bash(docker cp *)",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS: %{http_code}\\\\n' 'http://localhost:8004/api/auth/users/?page=1' -H 'Accept: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzc3MTc0OTU0LCJpYXQiOjE3NzcwODg1NTQsImp0aSI6IjA1MGRmNWMwZjIyMzRjYWI4MWE0NmRhMDE1ZTU4NTNkIiwidXNlcl9pZCI6IjdiYjE4ZWNjLTJiMDctNDM1My04MTgxLTE0MDU4M2Y1YWRmNiIsImVtYWlsIjoiYy5qb3JkYW5AYXRoYXJpeC5jb20iLCJmaXJzdF9uYW1lIjoiQ0FSTE9TIiwibGFzdF9uYW1lIjoiSk9SREFOIiwiZnVsbF9uYW1lIjoiQ0FSTE9TIEpPUkRBTiIsImlzX3N0YWZmIjpmYWxzZSwiaXNfc3VwZXJ1c2VyIjpmYWxzZSwiZW1haWxfdmVyaWZpZWQiOnRydWUsInByb2ZpbGVfdHlwZSI6ImRldmVsb3BlciJ9.vbcdYJTn2dL1kfVzNs5OvYElAzvuzMx0LZ9K-SPHszM' -H 'X-API-Key: ak_atlas0000000000000000000000000000000000000000000')"
     ]
   }
 }
