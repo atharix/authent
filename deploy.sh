@@ -63,7 +63,7 @@ log "Esperando que Django esté disponible..."
 RETRIES=40
 WAIT=3
 for i in $(seq 1 $RETRIES); do
-  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_HEALTH_URL" 2>/dev/null || echo "000")
+  STATUS=$(curl -L -s -o /dev/null -w "%{http_code}" "$DEPLOY_HEALTH_URL" 2>/dev/null || echo "000")
   if [[ "$STATUS" == "200" ]]; then
     ok "Health check OK (HTTP 200)"
     break
