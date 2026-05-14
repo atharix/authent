@@ -1,36 +1,213 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Authent Backend — Deploy (image-based, no source on server)
+# ═══════════════════════════════════════════════════════════════════════════
+# Triggers:
+#   • workflow_run de "Build & Push Image" (push a main / tag v*.*.*) → deploy
+#   • workflow_dispatch                                                → deploy manual
+#
+# El server NO recibe el source — solo:
+#   • docker-compose.prod.yml
+#   • caddy/Caddyfile
+#   • app/envs/prod.env
+#   • .env (secretos, generado en CI)
+# Y hace `docker compose pull && up -d` con el image desde GHCR.
+# ═══════════════════════════════════════════════════════════════════════════
+
 name: Deploy Authent
 
 on:
-    push:
-        tags:
-            - 'v*.*.*'
+  workflow_run:
+    workflows: ["Build & Push Image"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Tag de la imagen a deployar (latest, v1.0.0, sha-abc123)'
+        required: true
+        default: 'latest'
 
 concurrency:
-    group: deploy-production
-    cancel-in-progress: true
+  group: deploy-production
+  cancel-in-progress: true
+
+env:
+  IMAGE_TAG: ${{ github.event.inputs.image_tag || github.event.workflow_run.head_branch }}
 
 jobs:
-    deploy:
-        name: Deploy to Hetzner
-        runs-on: ubuntu-latest
-        environment: production
+  deploy:
+    name: Deploy to Hetzner
+    runs-on: ubuntu-latest
+    environment: production
+    # Deploy solo en: manual O build exitoso de un tag v*.*.*
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Pre-flight check secrets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_PRIVATE_KEY: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
+          HETZNER_PROJECT_PATH: ${{ secrets.HETZNER_PROJECT_PATH }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          missing=()
+          for var in HETZNER_HOST HETZNER_USER HETZNER_SSH_PRIVATE_KEY HETZNER_PROJECT_PATH \
+                     GH_PAT DB_PASSWORD SECRET_KEY \
+                     AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_STORAGE_BUCKET_NAME \
+                     RESEND_API_KEY; do
+            if [ -z "${!var}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::Secrets faltantes/vacíos: ${missing[*]}"
+            echo "Configurar en: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            exit 1
+          fi
+          echo "Todos los secrets críticos están presentes"
 
-            - name: Deploy over SSH
-              uses: appleboy/ssh-action@v1.2.0
-              with:
-                  host: ${{ secrets.HETZNER_HOST }}
-                  username: ${{ secrets.HETZNER_USER }}
-                  key: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
-                  port: ${{ secrets.HETZNER_PORT || '22' }}
-                  script_stop: true
-                  script: |
-                      set -euo pipefail
-                      cd "${{ secrets.HETZNER_PROJECT_PATH }}"
-                      export DEPLOY_BRANCH="main"
-                      export DEPLOY_HEALTH_URL="${{ secrets.DEPLOY_HEALTH_URL }}"
-                      export DEPLOY_SITE_URL="${{ secrets.DEPLOY_SITE_URL }}"
-                      ./deploy.sh
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.HETZNER_HOST }}
+          SSH_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          port="${SSH_PORT:-22}"
+          ssh-keyscan -p "$port" -H "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          chmod 644 ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null && echo "SSH key OK"
+
+      - name: Ensure deploy directory
+        env:
+          SSH_USER: ${{ secrets.HETZNER_USER }}
+          SSH_HOST: ${{ secrets.HETZNER_HOST }}
+          SSH_PORT: ${{ secrets.HETZNER_PORT }}
+          DEPLOY_PATH: ${{ secrets.HETZNER_PROJECT_PATH }}
+        run: |
+          ssh -p "${SSH_PORT:-22}" -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" \
+            "mkdir -p $DEPLOY_PATH/caddy $DEPLOY_PATH/app/envs"
+
+      - name: Write secrets-only .env on server
+        env:
+          SSH_USER: ${{ secrets.HETZNER_USER }}
+          SSH_HOST: ${{ secrets.HETZNER_HOST }}
+          SSH_PORT: ${{ secrets.HETZNER_PORT }}
+          DEPLOY_PATH: ${{ secrets.HETZNER_PROJECT_PATH }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          {
+            echo "# Auto-generated on $(date -u +%FT%TZ) by GitHub Actions"
+            echo "ENVIRONMENT=prod"
+            echo "BACKEND_IMAGE_TAG=${IMAGE_TAG}"
+            echo "DB_PASSWORD=${DB_PASSWORD}"
+            echo "SECRET_KEY=${SECRET_KEY}"
+            echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+            echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+            echo "AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}"
+            echo "RESEND_API_KEY=${RESEND_API_KEY}"
+            echo "ATHARIX_SHARED_EXTERNAL=true"
+            echo "ATHARIX_SHARED_NETWORK_NAME=atharix_shared"
+            echo "FRONTEND_DIR=../frontend"
+          } > /tmp/authent.env
+          scp -P "${SSH_PORT:-22}" -i ~/.ssh/id_ed25519 /tmp/authent.env \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/.env"
+          ssh -p "${SSH_PORT:-22}" -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" \
+            "chmod 600 $DEPLOY_PATH/.env"
+          rm -f /tmp/authent.env
+
+      - name: Sync deploy artifacts to server
+        env:
+          SSH_USER: ${{ secrets.HETZNER_USER }}
+          SSH_HOST: ${{ secrets.HETZNER_HOST }}
+          SSH_PORT: ${{ secrets.HETZNER_PORT }}
+          DEPLOY_PATH: ${{ secrets.HETZNER_PROJECT_PATH }}
+        run: |
+          rsync -avz \
+            -e "ssh -p ${SSH_PORT:-22} -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes" \
+            docker-compose.prod.yml \
+            caddy/Caddyfile \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
+          rsync -avz \
+            -e "ssh -p ${SSH_PORT:-22} -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes" \
+            app/envs/prod.env \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/app/envs/"
+
+      - name: Login to GHCR on server
+        env:
+          SSH_USER: ${{ secrets.HETZNER_USER }}
+          SSH_HOST: ${{ secrets.HETZNER_HOST }}
+          SSH_PORT: ${{ secrets.HETZNER_PORT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          ssh -p "${SSH_PORT:-22}" -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" \
+            "echo '$GH_PAT' | docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+
+      - name: Pull image and restart containers
+        env:
+          SSH_USER: ${{ secrets.HETZNER_USER }}
+          SSH_HOST: ${{ secrets.HETZNER_HOST }}
+          SSH_PORT: ${{ secrets.HETZNER_PORT }}
+          DEPLOY_PATH: ${{ secrets.HETZNER_PROJECT_PATH }}
+        run: |
+          ssh -p "${SSH_PORT:-22}" -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" bash -s <<REMOTE
+            set -e
+            cd "$DEPLOY_PATH"
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -f
+          REMOTE
+
+      - name: Health check
+        env:
+          SSH_USER: ${{ secrets.HETZNER_USER }}
+          SSH_HOST: ${{ secrets.HETZNER_HOST }}
+          SSH_PORT: ${{ secrets.HETZNER_PORT }}
+          DEPLOY_PATH: ${{ secrets.HETZNER_PROJECT_PATH }}
+        run: |
+          sleep 25
+          ssh -p "${SSH_PORT:-22}" -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" bash -s <<REMOTE
+            cd "$DEPLOY_PATH"
+            docker compose -f docker-compose.prod.yml ps
+            echo ""
+            echo "=== web logs (last 30) ==="
+            docker compose -f docker-compose.prod.yml logs --tail=30 web 2>&1 || true
+            echo ""
+            echo "=== health endpoint ==="
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              status=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8004/health/ 2>/dev/null || echo "000")
+              echo "  attempt \$i: \$status"
+              [ "\$status" = "200" ] && exit 0
+              sleep 3
+            done
+            echo "::warning::Health endpoint no respondió 200 después de 30s"
+          REMOTE
+
+      - name: Summary
+        run: |
+          echo "## Deploy completado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: \`ghcr.io/${{ github.repository_owner }}/authent:${{ env.IMAGE_TAG }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Server**: \`${{ secrets.HETZNER_HOST }}:${{ secrets.HETZNER_PROJECT_PATH }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: https://authent.atharix.com" >> $GITHUB_STEP_SUMMARY
