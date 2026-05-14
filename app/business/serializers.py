@@ -1,10 +1,53 @@
 from rest_framework import serializers
 
-from .models import Business, Collaborator
+from .models import Business, Collaborator, Industry
+
+
+class IndustrySerializer(serializers.ModelSerializer):
+    localized_name = serializers.SerializerMethodField()
+    translations = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Industry
+        fields = [
+            "id",
+            "code",
+            "name",
+            "description",
+            "icon",
+            "is_active",
+            "sort_order",
+            "name_pt",
+            "name_en",
+            "name_fr",
+            "name_it",
+            "localized_name",
+            "translations",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "localized_name", "translations"]
+
+    def get_localized_name(self, obj):
+        request = self.context.get("request")
+        if request:
+            language = request.META.get("HTTP_ACCEPT_LANGUAGE", "es")[:2].lower()
+            return obj.get_localized_name(language)
+        return obj.name
+
+    def get_translations(self, obj):
+        return obj.get_all_translations()
 
 
 class BusinessSerializer(serializers.ModelSerializer):
     country_name = serializers.CharField(source="country.name", read_only=True)
+    country_code_iso2 = serializers.CharField(source="country.code_iso2", read_only=True)
+    country_currency_code = serializers.CharField(
+        source="country.currency_code", read_only=True
+    )
+    country_vat_options = serializers.JSONField(
+        source="country.vat_options", read_only=True
+    )
     collaborators_count = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
@@ -14,8 +57,15 @@ class BusinessSerializer(serializers.ModelSerializer):
             "name",
             "legal_name",
             "tax_id",
+            "fiscal_name",
+            "registration_number",
             "country",
             "country_name",
+            "country_code_iso2",
+            "country_currency_code",
+            "country_vat_options",
+            "currency",
+            "vat_regime",
             "industry",
             "website",
             "phone",
@@ -32,8 +82,24 @@ class BusinessSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "country_name",
+            "country_code_iso2",
+            "country_currency_code",
+            "country_vat_options",
             "collaborators_count",
         ]
+
+    def validate(self, attrs):
+        """If currency is empty but country is set, fall back to country.currency_code."""
+        country = attrs.get("country") or getattr(self.instance, "country", None)
+        if country and not attrs.get("currency"):
+            attrs["currency"] = country.currency_code or attrs.get("currency", "")
+        if attrs.get("vat_regime") and country and country.vat_options:
+            valid_codes = {opt.get("code") for opt in country.vat_options}
+            if attrs["vat_regime"] not in valid_codes:
+                raise serializers.ValidationError(
+                    {"vat_regime": "Not a valid option for the selected country."}
+                )
+        return attrs
 
 
 class CollaboratorSerializer(serializers.ModelSerializer):

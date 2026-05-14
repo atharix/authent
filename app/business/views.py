@@ -1,20 +1,66 @@
+import logging
+
 from django.contrib.auth.models import Group
 from django.db import transaction
 from django.db.models import Count, Q
+
+logger = logging.getLogger(__name__)
 from rest_framework import status, viewsets
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from .models import Business, Collaborator
+from .models import Business, Collaborator, Industry
 from .permissions import (
     CanManageCollaborators,
     IsBusinessCollaboratorOrAdminWrite,
     is_business_collaborator,
 )
-from .serializers import BusinessSerializer, CollaboratorSerializer
+from .serializers import BusinessSerializer, CollaboratorSerializer, IndustrySerializer
 
 OWNER_GROUP_NAME = "owner"
+
+
+class IsStaffOrReadOnly(BasePermission):
+    """Allow read access to any authenticated user; write access restricted to staff.
+    Service-to-service requests from Atlas are also allowed to write."""
+
+    def has_permission(self, request, view):
+        application = getattr(request, "application", None)
+        if application and application.name == "Atlas":
+            return True
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        return request.user.is_staff
+
+
+class IndustryViewSet(viewsets.ModelViewSet):
+    """CRUD catalog of industries. Read access for all authenticated users; write for staff only."""
+
+    serializer_class = IndustrySerializer
+    permission_classes = [IsStaffOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Industry.objects.filter(is_deleted=False)
+        is_active = self.request.query_params.get("is_active")
+        if is_active is not None and is_active != "":
+            queryset = queryset.filter(
+                is_active=is_active.lower() in ("1", "true", "yes")
+            )
+        return queryset.order_by("sort_order", "name")
+
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        update_fields = ["is_deleted"]
+        if hasattr(instance, "deleted_at"):
+            from django.utils import timezone
+
+            instance.deleted_at = timezone.now()
+            update_fields.append("deleted_at")
+        instance.save(update_fields=update_fields)
 
 
 class BusinessViewSet(viewsets.ModelViewSet):
@@ -79,11 +125,17 @@ class BusinessViewSet(viewsets.ModelViewSet):
         """Create the business and bind the requester as owner-collaborator."""
         business = serializer.save()
         owner_group, _ = Group.objects.get_or_create(name=OWNER_GROUP_NAME)
-        Collaborator.objects.create(
+        collaborator = Collaborator.objects.create(
             user=self.request.user,
             business=business,
             role=owner_group,
             is_active=True,
+        )
+        logger.info(
+            "Collaborator created: user=%s business=%s role=%s",
+            self.request.user.email,
+            business.id,
+            owner_group.name,
         )
 
     def perform_destroy(self, instance):

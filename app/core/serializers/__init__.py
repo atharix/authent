@@ -43,6 +43,7 @@ class CountrySerializer(serializers.ModelSerializer):
             "numeric_code",
             "phone_code",
             "currency_code",
+            "vat_options",
             "is_active",
             "sort_order",
         ]
@@ -108,6 +109,7 @@ class CountryCreateUpdateSerializer(serializers.ModelSerializer):
             "name_it",
             "phone_code",
             "currency_code",
+            "vat_options",
             "is_active",
             "sort_order",
         ]

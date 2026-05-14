@@ -1,0 +1,317 @@
+[
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000001",
+    "fields": {
+      "code": "agricultura",
+      "name": "Agricultura, ganadería, silvicultura y pesca",
+      "description": "Cultivos, cría de animales, explotación forestal y pesca",
+      "icon": "fas fa-seedling",
+      "is_active": true,
+      "sort_order": 1,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000002",
+    "fields": {
+      "code": "minas",
+      "name": "Explotación de minas y canteras",
+      "description": "Extracción de minerales, petróleo, gas natural y materiales de cantera",
+      "icon": "fas fa-hard-hat",
+      "is_active": true,
+      "sort_order": 2,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000003",
+    "fields": {
+      "code": "manufactura",
+      "name": "Industrias manufactureras",
+      "description": "Transformación de materias primas en productos manufacturados",
+      "icon": "fas fa-industry",
+      "is_active": true,
+      "sort_order": 3,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000004",
+    "fields": {
+      "code": "energia",
+      "name": "Suministro de electricidad, gas, vapor",
+      "description": "Generación, transporte y distribución de energía eléctrica, gas y vapor",
+      "icon": "fas fa-bolt",
+      "is_active": true,
+      "sort_order": 4,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000005",
+    "fields": {
+      "code": "agua",
+      "name": "Distribución de agua y tratamiento",
+      "description": "Captación, tratamiento y suministro de agua; gestión de residuos y descontaminación",
+      "icon": "fas fa-tint",
+      "is_active": true,
+      "sort_order": 5,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000006",
+    "fields": {
+      "code": "construccion",
+      "name": "Construcción",
+      "description": "Construcción de edificios, obras de ingeniería civil y actividades especializadas",
+      "icon": "fas fa-hard-hat",
+      "is_active": true,
+      "sort_order": 6,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000007",
+    "fields": {
+      "code": "comercio",
+      "name": "Comercio al por mayor y menor",
+      "description": "Venta al por mayor y al por menor; reparación de vehículos y motocicletas",
+      "icon": "fas fa-store",
+      "is_active": true,
+      "sort_order": 7,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000008",
+    "fields": {
+      "code": "transporte",
+      "name": "Transporte y almacenamiento",
+      "description": "Transporte terrestre, aéreo, marítimo y actividades de almacenamiento",
+      "icon": "fas fa-truck",
+      "is_active": true,
+      "sort_order": 8,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000009",
+    "fields": {
+      "code": "hosteleria",
+      "name": "Alojamiento y servicios de comida",
+      "description": "Hoteles, restaurantes, cafeterías y otros servicios de hostelería",
+      "icon": "fas fa-utensils",
+      "is_active": true,
+      "sort_order": 9,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000010",
+    "fields": {
+      "code": "informacion",
+      "name": "Información y comunicación",
+      "description": "Edición, telecomunicaciones, programación informática y servicios de información",
+      "icon": "fas fa-wifi",
+      "is_active": true,
+      "sort_order": 10,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000011",
+    "fields": {
+      "code": "finanzas",
+      "name": "Actividades financieras y de seguros",
+      "description": "Banca, seguros, fondos de pensiones y actividades financieras auxiliares",
+      "icon": "fas fa-landmark",
+      "is_active": true,
+      "sort_order": 11,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000012",
+    "fields": {
+      "code": "inmobiliarias",
+      "name": "Actividades inmobiliarias",
+      "description": "Compra, venta, alquiler y gestión de bienes inmuebles",
+      "icon": "fas fa-building",
+      "is_active": true,
+      "sort_order": 12,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000013",
+    "fields": {
+      "code": "profesionales",
+      "name": "Actividades profesionales, científicas",
+      "description": "Servicios jurídicos, contables, consultoría, arquitectura e investigación",
+      "icon": "fas fa-briefcase",
+      "is_active": true,
+      "sort_order": 13,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000014",
+    "fields": {
+      "code": "administrativas",
+      "name": "Actividades administrativas y de apoyo",
+      "description": "Alquiler de maquinaria, agencias de viajes, seguridad y limpieza",
+      "icon": "fas fa-tasks",
+      "is_active": true,
+      "sort_order": 14,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000015",
+    "fields": {
+      "code": "publica",
+      "name": "Administración pública y defensa",
+      "description": "Actividades de la administración pública, defensa y seguridad social obligatoria",
+      "icon": "fas fa-university",
+      "is_active": true,
+      "sort_order": 15,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000016",
+    "fields": {
+      "code": "ensenanza",
+      "name": "Enseñanza",
+      "description": "Educación en todos los niveles y formación continua",
+      "icon": "fas fa-graduation-cap",
+      "is_active": true,
+      "sort_order": 16,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000017",
+    "fields": {
+      "code": "salud",
+      "name": "Salud humana y asistencia social",
+      "description": "Actividades sanitarias, hospitales, residencias y servicios sociales",
+      "icon": "fas fa-heartbeat",
+      "is_active": true,
+      "sort_order": 17,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000018",
+    "fields": {
+      "code": "cultura",
+      "name": "Artes, entretenimiento y recreación",
+      "description": "Actividades creativas, artísticas, deportivas y de entretenimiento",
+      "icon": "fas fa-palette",
+      "is_active": true,
+      "sort_order": 18,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000019",
+    "fields": {
+      "code": "otros-servicios",
+      "name": "Otras actividades de servicios",
+      "description": "Reparaciones, asociaciones, reparación de ordenadores y servicios personales",
+      "icon": "fas fa-hands-helping",
+      "is_active": true,
+      "sort_order": 19,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000020",
+    "fields": {
+      "code": "hogares",
+      "name": "Actividades de los hogares como empleadores",
+      "description": "Actividades de los hogares como empleadores de personal doméstico",
+      "icon": "fas fa-home",
+      "is_active": true,
+      "sort_order": 20,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "business.industry",
+    "pk": "a0000000-0000-0000-0000-000000000021",
+    "fields": {
+      "code": "extraterritoriales",
+      "name": "Organizaciones extraterritoriales",
+      "description": "Actividades de organizaciones y organismos extraterritoriales",
+      "icon": "fas fa-globe",
+      "is_active": true,
+      "sort_order": 21,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_deleted": false
+    }
+  }
+]

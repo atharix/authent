@@ -55,7 +55,6 @@ services:
     command: ./start-web.sh
     volumes:
       - ./app:/app
-      - ./fixtures:/app/fixtures
       - static_volume:/app/config/staticfiles
       - media_volume:/app/config/media
     environment:

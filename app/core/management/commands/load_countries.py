@@ -10,6 +10,21 @@ from django.utils import timezone
 from core.models import Country
 
 
+SPAIN_VAT_OPTIONS = [
+    {"code": "ES_GENERAL", "label": "General (21%)", "rate": 21, "is_default": True},
+    {"code": "ES_REDUCED", "label": "Reducido (10%)", "rate": 10, "is_default": False},
+    {"code": "ES_SUPER_REDUCED", "label": "Super reducido (4%)", "rate": 4, "is_default": False},
+    {"code": "ES_EXEMPT", "label": "Exento", "rate": 0, "is_default": False},
+]
+
+ECUADOR_VAT_OPTIONS = [
+    {"code": "EC_GENERAL", "label": "IVA 15%", "rate": 15, "is_default": True},
+    {"code": "EC_REDUCED", "label": "IVA 5%", "rate": 5, "is_default": False},
+    {"code": "EC_ZERO", "label": "IVA 0%", "rate": 0, "is_default": False},
+    {"code": "EC_EXEMPT", "label": "Exento", "rate": 0, "is_default": False},
+]
+
+
 class Command(BaseCommand):
     help = "Load countries data into the database"
 
@@ -30,6 +45,7 @@ class Command(BaseCommand):
                 "name_it": "Spagna",
                 "phone_code": "+34",
                 "currency_code": "EUR",
+                "vat_options": SPAIN_VAT_OPTIONS,
                 "is_active": True,
                 "sort_order": 1,
             },
@@ -45,6 +61,7 @@ class Command(BaseCommand):
                 "name_it": "Portogallo",
                 "phone_code": "+351",
                 "currency_code": "EUR",
+                "vat_options": [],
                 "is_active": True,
                 "sort_order": 2,
             },
@@ -60,8 +77,25 @@ class Command(BaseCommand):
                 "name_it": "Messico",
                 "phone_code": "+52",
                 "currency_code": "MXN",
+                "vat_options": [],
                 "is_active": True,
                 "sort_order": 3,
+            },
+            {
+                "id": "00000000-0000-0000-0000-000000000004",
+                "name": "Ecuador",
+                "code_iso2": "EC",
+                "code_iso3": "ECU",
+                "numeric_code": "218",
+                "name_pt": "Equador",
+                "name_en": "Ecuador",
+                "name_fr": "Équateur",
+                "name_it": "Ecuador",
+                "phone_code": "+593",
+                "currency_code": "USD",
+                "vat_options": ECUADOR_VAT_OPTIONS,
+                "is_active": True,
+                "sort_order": 4,
             },
         ]
 

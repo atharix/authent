@@ -20,8 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements/requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip && pip install -r /tmp/requirements.txt
 
-# Fixtures (recurso estático del proyecto)
-COPY fixtures/ ./fixtures/
+# Fixtures (recurso estático del proyecto).
+# Se copia fuera de /app para que el bind mount `./app:/app` (dev) no las oculte.
+# start-web.sh las carga desde aquí en cada arranque (idempotente).
+COPY fixtures/ /seed/fixtures/
 
 # Copiar código fuente
 COPY app/ .

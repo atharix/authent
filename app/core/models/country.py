@@ -89,6 +89,17 @@ class Country(BaseModel):
         help_text=_("ISO 4217 currency code (e.g., MXN, USD, EUR)"),
     )
 
+    vat_options = models.JSONField(
+        _("VAT Options"),
+        default=list,
+        blank=True,
+        help_text=_(
+            "List of VAT regimes available in this country, each as "
+            "{code, label, rate, is_default}. The frontend uses this to "
+            "populate the fiscal regime selector when this country is chosen."
+        ),
+    )
+
     is_active = models.BooleanField(
         _("Is Active"),
         default=True,

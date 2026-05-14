@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def send_password_reset_email(user_email, user_name, pin_code, hash_token):
     """Send password reset email with PIN code."""
-    subject = "Password Reset - Authent"
+    subject = "Restablecer contraseña - Authent"
     context = {
         "user_name": user_name,
         "pin_code": pin_code,

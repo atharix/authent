@@ -17,6 +17,14 @@ fi
 echo "Running migrations..."
 python manage.py migrate --no-input
 
+echo "Loading fixtures (idempotent; integrity errors are ignored)..."
+for fixture in /seed/fixtures/*.json; do
+    [ -f "$fixture" ] || continue
+    name=$(basename "$fixture")
+    echo "  → $name"
+    python manage.py loaddata "$fixture" 2>&1 | tail -1 || true
+done
+
 echo "Collecting static files..."
 python manage.py collectstatic --no-input --clear
 
