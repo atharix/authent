@@ -2,9 +2,8 @@ name: Deploy Authent
 
 on:
     push:
-        branches:
-            - main
-    workflow_dispatch:
+        tags:
+            - 'v*.*.*'
 
 concurrency:
     group: deploy-production
