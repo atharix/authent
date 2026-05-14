@@ -60,7 +60,7 @@ ok "Servicios en marcha"
 
 # ── 4. Health check ───────────────────────────────────────────────────────────
 log "Esperando que Django esté disponible..."
-RETRIES=20
+RETRIES=40
 WAIT=3
 for i in $(seq 1 $RETRIES); do
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_HEALTH_URL" 2>/dev/null || echo "000")
