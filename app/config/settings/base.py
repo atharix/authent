@@ -42,6 +42,7 @@ LOCAL_APPS = [
     "users",
     "apps",
     "business",
+    "integrations",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -352,3 +353,11 @@ if USE_S3 and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
     }
 
 SITE_URL = env("SITE_URL", default="http://localhost:8000")
+
+# ─── Atlas Bridge (CRM sync) ───────────────────────────────────────────────
+# API key (secreto) viene de .env. Resto viene de dev.env / prod.env.
+ATLAS_BRIDGE_BASE_URL = env("ATLAS_BRIDGE_BASE_URL", default="")
+ATLAS_BRIDGE_API_KEY = env("ATLAS_BRIDGE_API_KEY", default="")
+ATLAS_BRIDGE_ENABLED = env.bool("ATLAS_BRIDGE_ENABLED", default=False)
+ATLAS_BRIDGE_TIMEOUT = env.float("ATLAS_BRIDGE_TIMEOUT", default=10.0)
+ATLAS_BRIDGE_MAX_RETRIES = env.int("ATLAS_BRIDGE_MAX_RETRIES", default=3)

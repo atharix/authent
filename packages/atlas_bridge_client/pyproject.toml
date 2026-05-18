@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlas-bridge-client"
+version = "0.1.0"
+description = "HTTP client para el inbound API de Atlas (leads, contacts, events, convert)."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Atharix", email = "dev@atharix.com" }]
+license = { text = "Proprietary" }
+dependencies = [
+    "httpx>=0.27",
+    "pydantic[email]>=2.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "respx>=0.20",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"

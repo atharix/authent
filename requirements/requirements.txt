@@ -30,6 +30,12 @@ resend>=0.6
 # HTTP Client
 httpx>=0.27
 
+# Async tasks
+celery[redis]>=5.4
+
+# Atlas Bridge (CRM sync) — paquete interno
+-e ./packages/atlas_bridge_client
+
 # Image processing
 Pillow>=10.3
 
