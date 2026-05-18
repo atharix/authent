@@ -16,8 +16,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-# Dependencias Python (desde la raíz del proyecto)
+# Dependencias Python (desde la raíz del proyecto).
+# `packages/` se copia antes del install porque requirements.txt incluye
+# instalaciones editables `-e ./packages/...` que se resuelven relativas a WORKDIR.
 COPY requirements/requirements.txt /tmp/requirements.txt
+COPY packages/ /app/packages/
 RUN pip install --upgrade pip && pip install -r /tmp/requirements.txt
 
 # Fixtures (recurso estático del proyecto).
