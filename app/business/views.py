@@ -10,6 +10,9 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from django.contrib.auth.models import Group
 
 from .models import Business, Collaborator, Industry
 from .permissions import (
@@ -251,3 +254,98 @@ class CollaboratorViewSet(viewsets.ModelViewSet):
         ).select_related("business", "role")
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class InternalCollaboratorView(APIView):
+    """Service-to-service endpoint para crear/actualizar collaborators.
+
+    Autentica únicamente vía X-API-Key (validada por APIKeyMiddleware) de la
+    aplicación "Atlas". No requiere JWT del usuario, porque al aceptar una
+    invitación el invitado aún no es admin/owner del business y no puede
+    crear su propio Collaborator vía el endpoint normal.
+
+    Payload:
+        {
+            "user_email": "user@example.com",
+            "business_id": "<uuid>",
+            "role_name": "admin"   # opcional; nombre de Group existente
+        }
+
+    Idempotente: si el collaborator existe se reactiva y se actualiza el rol.
+    """
+
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request):
+        application = getattr(request, "application", None)
+        if not (application and application.name == "Atlas"):
+            return Response(
+                {"error": "Forbidden — only Atlas service may call this endpoint."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user_email = (request.data.get("user_email") or "").strip()
+        business_id = request.data.get("business_id") or ""
+        role_name = (request.data.get("role_name") or "").strip()
+
+        if not user_email or not business_id:
+            return Response(
+                {"error": "user_email and business_id are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.contrib.auth import get_user_model
+
+        UserModel = get_user_model()
+
+        try:
+            user = UserModel.objects.get(email__iexact=user_email)
+        except UserModel.DoesNotExist:
+            return Response(
+                {"error": f"User not found in Authent: {user_email}"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            business = Business.objects.get(id=business_id, is_deleted=False)
+        except Business.DoesNotExist:
+            return Response(
+                {"error": f"Business not found: {business_id}"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        role = None
+        if role_name:
+            try:
+                role = Group.objects.get(name=role_name)
+            except Group.DoesNotExist:
+                logger.warning(
+                    "Group '%s' not found, creating collaborator without role",
+                    role_name,
+                )
+
+        with transaction.atomic():
+            collab, created = Collaborator.objects.get_or_create(
+                user=user,
+                business=business,
+                defaults={"role": role, "is_active": True},
+            )
+            if not created:
+                update_fields = []
+                if collab.is_deleted:
+                    collab.is_deleted = False
+                    update_fields.append("is_deleted")
+                if not collab.is_active:
+                    collab.is_active = True
+                    update_fields.append("is_active")
+                if role and collab.role_id != role.id:
+                    collab.role = role
+                    update_fields.append("role")
+                if update_fields:
+                    collab.save(update_fields=update_fields)
+
+        return Response(
+            CollaboratorSerializer(collab).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
