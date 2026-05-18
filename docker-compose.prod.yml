@@ -15,6 +15,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: authent_db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-authent_prod}
       POSTGRES_USER: ${DB_USER:-authent_user}
@@ -46,6 +47,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: authent_redis
+    restart: unless-stopped
     command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
     deploy:
       resources:
@@ -57,6 +59,7 @@ services:
   web:
     image: ghcr.io/atharix/authent:${BACKEND_IMAGE_TAG:-latest}
     container_name: authent_web
+    restart: unless-stopped
     command: ./start-web.sh
     volumes:
       - static_volume:/app/config/staticfiles
