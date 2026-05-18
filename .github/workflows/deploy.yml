@@ -58,12 +58,13 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ATLAS_BRIDGE_API_KEY: ${{ secrets.ATLAS_BRIDGE_API_KEY }}
         run: |
           missing=()
           for var in HETZNER_HOST HETZNER_USER HETZNER_SSH_PRIVATE_KEY HETZNER_PROJECT_PATH \
                      GH_PAT DB_PASSWORD SECRET_KEY \
                      AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_STORAGE_BUCKET_NAME \
-                     RESEND_API_KEY; do
+                     RESEND_API_KEY ATLAS_BRIDGE_API_KEY; do
             if [ -z "${!var}" ]; then
               missing+=("$var")
             fi
@@ -116,6 +117,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ATLAS_BRIDGE_API_KEY: ${{ secrets.ATLAS_BRIDGE_API_KEY }}
         run: |
           {
             echo "# Auto-generated on $(date -u +%FT%TZ) by GitHub Actions"
@@ -127,6 +129,7 @@ jobs:
             echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
             echo "AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}"
             echo "RESEND_API_KEY=${RESEND_API_KEY}"
+            echo "ATLAS_BRIDGE_API_KEY=${ATLAS_BRIDGE_API_KEY}"
             echo "ATHARIX_SHARED_EXTERNAL=true"
             echo "ATHARIX_SHARED_NETWORK_NAME=atharix_shared"
             echo "FRONTEND_DIR=../frontend"
