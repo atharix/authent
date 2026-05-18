@@ -19,7 +19,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     def validate_email(self, value):
         """Validate that user exists."""
         try:
-            User.objects.get(email=value, is_active=True)
+            User.objects.get(email__iexact=value, is_active=True)
         except User.DoesNotExist:
             raise serializers.ValidationError("User with this email does not exist")
         return value
@@ -27,7 +27,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     def save(self):
         """Create password reset request and send email."""
         email = self.validated_data["email"]
-        user = User.objects.get(email=email, is_active=True)
+        user = User.objects.get(email__iexact=email, is_active=True)
 
         # Create reset request
         reset = PasswordReset.objects.create(
@@ -63,7 +63,7 @@ class PasswordResetVerifySerializer(serializers.Serializer):
         """Validate hash token and PIN combination."""
         try:
             reset = PasswordReset.objects.get(
-                user__email=attrs["email"],
+                user__email__iexact=attrs["email"],
                 hash_token=attrs["hash_token"],
                 pin=attrs["pin"],
             )
@@ -91,7 +91,7 @@ class SimplePinVerifySerializer(serializers.Serializer):
         """Validate email and PIN combination without requiring hash_token."""
         try:
             reset = PasswordReset.objects.get(
-                user__email=attrs["email"],
+                user__email__iexact=attrs["email"],
                 pin=attrs["code"],
             )
 
@@ -124,7 +124,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         try:
             reset = PasswordReset.objects.get(
-                user__email=attrs["email"],
+                user__email__iexact=attrs["email"],
                 hash_token=attrs["hash_token"],
                 pin=attrs["pin"],
             )
@@ -199,7 +199,7 @@ class SimplePasswordResetSerializer(serializers.Serializer):
         """Validate email and PIN combination."""
         try:
             reset = PasswordReset.objects.get(
-                user__email=attrs["email"],
+                user__email__iexact=attrs["email"],
                 pin=attrs["code"],
             )
 

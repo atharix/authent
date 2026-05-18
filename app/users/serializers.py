@@ -168,7 +168,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     def validate_email(self, value):
         """Validate that user exists."""
         try:
-            User.objects.get(email=value, is_active=True)
+            User.objects.get(email__iexact=value, is_active=True)
         except User.DoesNotExist as exc:
             raise serializers.ValidationError(
                 "No active account found with this email"
@@ -178,7 +178,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     def create(self, validated_data):
         """Create password reset request and send email."""
         email = validated_data["email"]
-        user = User.objects.get(email=email)
+        user = User.objects.get(email__iexact=email)
 
         # Deactivate any existing reset requests
         PasswordReset.objects.filter(user=user, is_active=True).update(is_active=False)
