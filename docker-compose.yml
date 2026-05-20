@@ -55,6 +55,7 @@ services:
     command: ./start-web.sh
     volumes:
       - ./app:/app
+      - ./packages:/app/packages
       - static_volume:/app/config/staticfiles
       - media_volume:/app/config/media
     environment:
@@ -80,6 +81,36 @@ services:
       resources:
         limits:
           memory: 512M
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - authent_network
+      - atharix_shared
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: authent_celery_worker
+    command: celery -A config worker -l info --concurrency=2
+    volumes:
+      - ./app:/app
+      - ./packages:/app/packages
+      - media_volume:/app/config/media
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.${ENVIRONMENT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+    env_file:
+      - .env
+      - app/envs/${ENVIRONMENT}.env
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy

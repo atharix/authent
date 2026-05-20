@@ -86,6 +86,33 @@ services:
       - authent_network
       - atharix_shared
 
+  celery_worker:
+    image: ghcr.io/atharix/authent:${BACKEND_IMAGE_TAG:-latest}
+    container_name: authent_celery_worker
+    restart: unless-stopped
+    command: celery -A config worker -l info --concurrency=2
+    volumes:
+      - media_volume:/app/config/media
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.${ENVIRONMENT:-prod}
+      DB_HOST: db
+      DB_PORT: 5432
+    env_file:
+      - .env
+      - app/envs/${ENVIRONMENT:-prod}.env
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - authent_network
+      - atharix_shared
+
   caddy:
     image: caddy:2-alpine
     container_name: authent_caddy
