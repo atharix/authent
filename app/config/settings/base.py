@@ -333,6 +333,21 @@ CACHES = {
 }
 
 # ---------------------------------------------------------------------------
+# Celery — broker / result backend
+# ---------------------------------------------------------------------------
+# config/celery.py usa config_from_object(..., namespace="CELERY"), por lo que
+# Celery toma estas variables como broker_url / result_backend. Si no se
+# definen, Celery cae a su default (amqp://localhost) y cualquier .delay()
+# revienta con Connection refused — lo que provocó 500 al crear Business y la
+# duplicación masiva de 2026-05-19. Default a Redis del propio entorno.
+CELERY_BROKER_URL = env(
+    "CELERY_BROKER_URL", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+)
+CELERY_RESULT_BACKEND = env(
+    "CELERY_RESULT_BACKEND", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+)
+
+# ---------------------------------------------------------------------------
 # AWS S3 (opcional — solo si USE_S3=true)
 # ---------------------------------------------------------------------------
 
