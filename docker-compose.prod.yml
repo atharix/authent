@@ -90,7 +90,7 @@ services:
     image: ghcr.io/atharix/authent:${BACKEND_IMAGE_TAG:-latest}
     container_name: authent_celery_worker
     restart: unless-stopped
-    command: celery -A config worker -l info --concurrency=2
+    command: sh -c "mkdir -p /app/config/logs && celery -A config worker -l info --concurrency=2"
     volumes:
       - media_volume:/app/config/media
     environment:

@@ -95,7 +95,7 @@ services:
       context: .
       dockerfile: app/Dockerfile
     container_name: authent_celery_worker
-    command: celery -A config worker -l info --concurrency=2
+    command: sh -c "mkdir -p /app/config/logs && celery -A config worker -l info --concurrency=2"
     volumes:
       - ./app:/app
       - ./packages:/app/packages
