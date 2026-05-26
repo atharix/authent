@@ -25,6 +25,12 @@ for fixture in /seed/fixtures/*.json; do
     python manage.py loaddata "$fixture" 2>&1 | tail -1 || true
 done
 
+# Re-aplica vat_options por país. Las migraciones de datos 0002/0003 corren
+# antes que los fixtures de countries; sin esto los entornos fresh quedan
+# con `vat_options=[]` y el frontend bloquea el TaxCodePicker.
+echo "Seeding country VAT options..."
+python manage.py seed_vat_options 2>&1 | tail -10 || true
+
 echo "Collecting static files..."
 python manage.py collectstatic --no-input --clear
 
