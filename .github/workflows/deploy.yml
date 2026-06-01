@@ -26,8 +26,19 @@ on:
         required: true
         default: 'latest'
 
+# Concurrency por ref: cuando se pushea main + tag casi en paralelo se
+# disparan dos workflow_runs distintos (uno por cada head_branch). Si
+# usáramos un único grupo, `cancel-in-progress` cancelaría el del tag
+# (el legítimo, que sí deploya) cuando el de main llega segundo. Separar
+# por head_branch evita la carrera y conserva el cancel-in-progress para
+# el caso real: el mismo tag re-pusheado.
 concurrency:
-  group: deploy-production
+  group: >-
+    deploy-production-${{
+      github.event_name == 'workflow_dispatch'
+        && github.event.inputs.image_tag
+        || github.event.workflow_run.head_branch
+    }}
   cancel-in-progress: true
 
 env:
