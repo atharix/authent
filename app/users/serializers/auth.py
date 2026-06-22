@@ -28,37 +28,47 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return token
 
+    @classmethod
+    def _user_payload(cls, user):
+        """Update last_login and return the serialized user block."""
+        user.last_login = timezone.now()
+        user.save(update_fields=["last_login"])
+
+        avatar_url = get_avatar_url(user.avatar, expiration=1800)
+
+        return {
+            "id": str(user.id),
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.get_full_name(),
+            "is_staff": user.is_staff,
+            "is_superuser": user.is_superuser,
+            "email_verified": user.email_verified,
+            "profile_type": user.profile_type,
+            "date_joined": user.date_joined,
+            "last_login": user.last_login,
+            "avatar": avatar_url,
+        }
+
+    @classmethod
+    def build_response_for_user(cls, user):
+        """Build the {access, refresh, user} payload for a user without a password.
+
+        Shared with passwordless logins (e.g. passkeys) so their response is
+        byte-for-byte identical to the password login below.
+        """
+        refresh = cls.get_token(user)
+        return {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": cls._user_payload(user),
+        }
+
     def validate(self, attrs):
         """Validate credentials and update last login."""
         data = super().validate(attrs)
-
-        # Update last login time
-        self.user.last_login = timezone.now()
-        self.user.save(update_fields=["last_login"])
-
-        # Get avatar URL with 30 minutes expiration
-        avatar_url = get_avatar_url(self.user.avatar, expiration=1800)
-
-        # Add user information to response
-        data.update(
-            {
-                "user": {
-                    "id": str(self.user.id),
-                    "email": self.user.email,
-                    "first_name": self.user.first_name,
-                    "last_name": self.user.last_name,
-                    "full_name": self.user.get_full_name(),
-                    "is_staff": self.user.is_staff,
-                    "is_superuser": self.user.is_superuser,
-                    "email_verified": self.user.email_verified,
-                    "profile_type": self.user.profile_type,
-                    "date_joined": self.user.date_joined,
-                    "last_login": self.user.last_login,
-                    "avatar": avatar_url,
-                }
-            }
-        )
-
+        data["user"] = self._user_payload(self.user)
         return data
 
 

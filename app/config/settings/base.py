@@ -43,6 +43,7 @@ LOCAL_APPS = [
     "apps",
     "business",
     "integrations",
+    "webauthn_auth",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -368,6 +369,15 @@ if USE_S3 and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
     }
 
 SITE_URL = env("SITE_URL", default="http://localhost:8000")
+
+# ---------------------------------------------------------------------------
+# WebAuthn / Passkeys
+# ---------------------------------------------------------------------------
+# RP ID = el dominio de la web app (no el de esta API). Si cambia, invalida
+# todos los passkeys existentes. Origins puede ser una lista (dev + previews).
+WEBAUTHN_RP_ID = env("WEBAUTHN_RP_ID", default="localhost")
+WEBAUTHN_RP_NAME = env("WEBAUTHN_RP_NAME", default="Atharix Atlas")
+WEBAUTHN_ORIGINS = env.list("WEBAUTHN_ORIGINS", default=["http://localhost:8081"])
 
 # ─── Atlas Bridge (CRM sync) ───────────────────────────────────────────────
 # API key (secreto) viene de .env. Resto viene de dev.env / prod.env.
