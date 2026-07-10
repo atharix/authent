@@ -94,8 +94,10 @@ class RegisterVerifyView(APIView):
         credential = serializer.validated_data["credential"]
         try:
             verification = ceremonies.verify_registration(credential, challenge.challenge)
-        except Exception as exc:
-            logger.warning("Passkey registration verification failed: %s", exc)
+        except Exception:
+            # El cliente solo puede ver un mensaje genérico, así que el traceback
+            # (rp_id / origin / challenge que no cuadra) tiene que quedar en el log.
+            logger.exception("Passkey registration verification failed")
             return Response(
                 {"error": "Could not verify passkey.", "code": "verification_failed"},
                 status=status.HTTP_400_BAD_REQUEST,
