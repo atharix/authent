@@ -31,6 +31,16 @@ class WebAuthnCredential(models.Model):
         on_delete=models.CASCADE,
         related_name="webauthn_credentials",
     )
+    # RP ID con el que se creó la credencial. El autenticador la guarda atada a
+    # ese dominio y NO la ofrece para otro, así que al cambiar WEBAUTHN_RP_ID
+    # todas las anteriores quedan muertas — aunque su fila siga aquí.
+    #
+    # Sin este campo el sistema no distingue vivas de zombis: el listado decía
+    # "ya tienes passkey", la UI no ofrecía registrar una nueva, y el usuario se
+    # quedaba sin poder entrar y sin forma de arreglarlo. Guardarlo hace que un
+    # cambio de RP ID se cure solo: las viejas dejan de contar y la app pide
+    # registrar de nuevo.
+    rp_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
     credential_id = models.CharField(max_length=512, unique=True, db_index=True)
     public_key = models.TextField()
     sign_count = models.BigIntegerField(default=0)

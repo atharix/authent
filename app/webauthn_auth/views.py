@@ -28,6 +28,19 @@ logger = logging.getLogger(__name__)
 _GENERIC_AUTH_ERROR = {"error": "Authentication failed.", "code": "authentication_failed"}
 
 
+def current_rp_credentials():
+    """Credenciales que AÚN pueden usarse: las del RP ID vigente.
+
+    Una passkey vive en el autenticador atada al RP ID con el que se creó, y no
+    se ofrece para otro dominio. Al cambiar `WEBAUTHN_RP_ID`, las anteriores
+    quedan muertas aunque su fila siga en la base. Filtrar por aquí es lo que
+    hace que el sistema se cure solo: dejan de contarse, el listado del usuario
+    sale vacío, y la app le pide registrar una nueva en vez de dejarlo fuera con
+    una passkey que nunca va a funcionar.
+    """
+    return WebAuthnCredential.objects.filter(rp_id=settings.WEBAUTHN_RP_ID)
+
+
 def _transports_of(credential) -> list:
     response_block = credential.get("response") or {}
     if isinstance(response_block, dict):
@@ -48,8 +61,12 @@ class RegisterOptionsView(APIView):
         WebAuthnChallenge.objects.filter(
             user=user, ceremony=WebAuthnChallenge.CEREMONY_REGISTRATION
         ).delete()
+        # `excludeCredentials` evita registrar dos veces el mismo autenticador.
+        # Solo tiene sentido con las del RP vigente: excluir una credencial de
+        # otro RP impediría re-registrar el mismo dispositivo tras cambiar el
+        # RP ID — justo lo que el usuario necesita hacer.
         existing = list(
-            WebAuthnCredential.objects.filter(user=user).values_list(
+            current_rp_credentials().filter(user=user).values_list(
                 "credential_id", flat=True
             )
         )
@@ -106,6 +123,8 @@ class RegisterVerifyView(APIView):
         try:
             cred = WebAuthnCredential.objects.create(
                 user=user,
+                # Se sella con el RP vigente: es lo que la ata a este dominio.
+                rp_id=settings.WEBAUTHN_RP_ID,
                 credential_id=bytes_to_base64url(verification.credential_id),
                 public_key=bytes_to_base64url(verification.credential_public_key),
                 sign_count=verification.sign_count,
@@ -182,8 +201,13 @@ class AuthenticateVerifyView(APIView):
         raw_id = credential.get("rawId") or credential.get("id")
         cred = None
         if raw_id:
+            # Filtrado por RP vigente: una credencial de otro RP no puede
+            # autenticar aquí. En la práctica el autenticador ni la ofrecería,
+            # pero el backend no debe fiarse de eso — quien envía el assertion es
+            # el cliente.
             cred = (
-                WebAuthnCredential.objects.select_related("user")
+                current_rp_credentials()
+                .select_related("user")
                 .filter(credential_id=raw_id)
                 .first()
             )
@@ -234,7 +258,10 @@ class CredentialListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        qs = WebAuthnCredential.objects.filter(user=request.user)
+        # Solo las usables. Es el endpoint del que se fía la app para decidir si
+        # pedirte registrar una passkey: si aquí se colasen las de un RP viejo,
+        # creería que ya tienes una y te dejaría fuera sin ofrecerte arreglarlo.
+        qs = current_rp_credentials().filter(user=request.user)
         return Response({"results": WebAuthnCredentialSerializer(qs, many=True).data})
 
 
