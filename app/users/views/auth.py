@@ -38,21 +38,50 @@ class UserLoginView(TokenObtainPairView):
                     settings.SECRET_KEY,
                     algorithms=["HS256"],
                 )
+            except Exception:
+                access_token = None
 
-                # Get user
-                from users.models import User
+            # ── Gate de acceso por producto (rechazo en el login mismo) ──────────
+            # Si el producto que llama (identificado por su X-API-Key → Application)
+            # exige acceso y el usuario no lo tiene, se rechaza el login con 403 y un
+            # mensaje claro. Gated por producto para no afectar a Atlas/Delta hasta su
+            # backfill. Los superusuarios (equipo Atharix) nunca se bloquean.
+            application = getattr(request, "application", None)
+            if (
+                access_token is not None
+                and application is not None
+                and getattr(application, "enforce_app_access", False)
+            ):
+                granted = access_token.get("app_access") or []
+                if (
+                    application.code not in granted
+                    and not access_token.get("is_superuser")
+                ):
+                    return Response(
+                        {
+                            "detail": (
+                                f"No tienes acceso a {application.name}. "
+                                "Comunícate con el administrador de tu empresa para "
+                                "habilitarlo."
+                            ),
+                            "code": "no_app_access",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
 
-                user = User.objects.get(id=access_token["user_id"])
+            # Create session record (los errores no rompen el login)
+            if access_token is not None:
+                try:
+                    from users.models import User
 
-                # Create session record
-                create_session(user, access_token, refresh_token_str, request)
+                    user = User.objects.get(id=access_token["user_id"])
+                    create_session(user, access_token, refresh_token_str, request)
+                except Exception as e:
+                    # Log error but don't fail the login
+                    import logging
 
-            except Exception as e:
-                # Log error but don't fail the login
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.error(f"Failed to create session record: {e}")
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to create session record: {e}")
 
         return response
 
@@ -129,10 +158,30 @@ class TokenVerifyView(APIView):
         """Verify that the token is still valid."""
         user = request.user
 
+        # Acceso por producto: se devuelve el claim `app_access` horneado en el token
+        # (los productos —Metis/Atlas/Delta— lo leen para rechazar en cada request).
+        # Fallback: si el token es viejo y no trae el claim, se recalcula en vivo para
+        # no expulsar sesiones ya abiertas durante el rollout.
+        app_access = None
+        if request.auth is not None:
+            try:
+                app_access = request.auth.get("app_access")
+            except Exception:  # noqa: BLE001
+                app_access = None
+        if app_access is None:
+            # Defensivo: no romper verify-token de ningún producto si el cálculo falla.
+            try:
+                from business.access import valid_app_codes_for_user
+
+                app_access = valid_app_codes_for_user(user)
+            except Exception:  # noqa: BLE001
+                app_access = None
+
         return Response(
             {
                 "valid": True,
                 "user": UserProfileSerializer(user, context={"request": request}).data,
+                "app_access": app_access,
             },
             status=status.HTTP_200_OK,
         )

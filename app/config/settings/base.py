@@ -376,7 +376,9 @@ SITE_URL = env("SITE_URL", default="http://localhost:8000")
 # RP ID = el dominio de la web app (no el de esta API). Si cambia, invalida
 # todos los passkeys existentes. Origins puede ser una lista (dev + previews).
 WEBAUTHN_RP_ID = env("WEBAUTHN_RP_ID", default="localhost")
-WEBAUTHN_RP_NAME = env("WEBAUTHN_RP_NAME", default="Atharix Atlas")
+# Un solo RP sirve a Atlas y a Olimpus, así que el nombre que ve el usuario en
+# el diálogo del sistema no puede nombrar solo a uno de los dos productos.
+WEBAUTHN_RP_NAME = env("WEBAUTHN_RP_NAME", default="Atharix")
 WEBAUTHN_ORIGINS = env.list("WEBAUTHN_ORIGINS", default=["http://localhost:8081"])
 
 # ─── Atlas Bridge (CRM sync) ───────────────────────────────────────────────

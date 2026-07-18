@@ -31,7 +31,7 @@ class IsStaffOrReadOnly(BasePermission):
 
     def has_permission(self, request, view):
         application = getattr(request, "application", None)
-        if application and application.name == "Atlas":
+        if application and (application.code == "atlas" or application.name == "Atlas"):
             return True
         if not (request.user and request.user.is_authenticated):
             return False
@@ -170,6 +170,24 @@ class BusinessViewSet(viewsets.ModelViewSet):
             )
         return Response(CollaboratorSerializer(collab).data)
 
+    @action(detail=True, methods=["get"], url_path="app-access")
+    def app_access(self, request, pk=None):
+        """Estado de licencia de esta empresa para el producto que llama (X-API-Key).
+
+        Endpoint dedicado que consumen los productos (Metis/Atlas/Delta) para pintar su
+        pantalla de Licenciamiento sin ser dueños del dato.
+        """
+        business = self.get_object()
+        application = getattr(request, "application", None)
+        if application is None:
+            return Response(
+                {"detail": "No hay contexto de Application (falta X-API-Key)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        from .access import app_access_state
+
+        return Response(app_access_state(business, application))
+
 
 class CollaboratorViewSet(viewsets.ModelViewSet):
     """
@@ -279,9 +297,15 @@ class InternalCollaboratorView(APIView):
 
     def post(self, request):
         application = getattr(request, "application", None)
-        if not (application and application.name == "Atlas"):
+        if not (
+            application
+            and (
+                application.code in ("atlas", "metis")
+                or application.name in ("Atlas", "Metis")
+            )
+        ):
             return Response(
-                {"error": "Forbidden — only Atlas service may call this endpoint."},
+                {"error": "Forbidden — solo un servicio de producto (Atlas/Metis) puede llamar este endpoint."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -347,5 +371,110 @@ class InternalCollaboratorView(APIView):
 
         return Response(
             CollaboratorSerializer(collab).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class InternalBusinessAppAccessView(APIView):
+    """Service-to-service: upsert del acceso (licencia) de una empresa al producto que llama.
+
+    Autentica únicamente vía X-API-Key (validada por APIKeyMiddleware). El producto que
+    llama (`request.application`) solo puede gestionar **su propio** acceso — no el de
+    otros productos. Idempotente.
+
+    Es la vía del **backfill**: cada producto (Metis/Atlas/Delta) empuja hacia Authent —la
+    fuente de verdad— la licencia que hoy tiene localmente, para poder activar el gate sin
+    dejar a nadie fuera.
+
+    Payload:
+        {
+            "business_id": "<uuid>",
+            "license_type": "none|trial|standard|enterprise",
+            "is_enabled": true,
+            "expires_at": "2026-12-31" | null,
+            "max_users": 10,
+            "access_notice": ""      # opcional
+        }
+    """
+
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        from django.utils.dateparse import parse_date
+
+        from .access import app_access_state
+        from .models import BusinessAppAccess, LicenseType
+
+        application = getattr(request, "application", None)
+        if application is None:
+            return Response(
+                {"error": "Falta X-API-Key / contexto de Application."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        business_id = request.data.get("business_id") or ""
+        if not business_id:
+            return Response(
+                {"error": "business_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            business = Business.objects.get(id=business_id, is_deleted=False)
+        except (Business.DoesNotExist, DjangoValidationError, ValueError):
+            return Response(
+                {"error": f"Business not found: {business_id}"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # license_type — validar contra el catálogo.
+        license_type = (request.data.get("license_type") or LicenseType.NONE).strip()
+        valid_types = {c for c, _ in LicenseType.choices}
+        if license_type not in valid_types:
+            return Response(
+                {"error": f"license_type inválido: {license_type}. Opciones: {sorted(valid_types)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # expires_at — fecha ISO o vacío.
+        expires_raw = request.data.get("expires_at")
+        expires_at = None
+        if expires_raw:
+            expires_at = parse_date(str(expires_raw))
+            if expires_at is None:
+                return Response(
+                    {"error": f"expires_at inválido (usa YYYY-MM-DD): {expires_raw}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # max_users — entero ≥ 0.
+        try:
+            max_users = int(request.data.get("max_users") or 0)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "max_users debe ser un entero."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        max_users = max(max_users, 0)
+
+        is_enabled = bool(request.data.get("is_enabled", True))
+        access_notice = str(request.data.get("access_notice") or "")
+
+        defaults = {
+            "license_type": license_type,
+            "is_enabled": is_enabled,
+            "expires_at": expires_at,
+            "max_users": max_users,
+            "access_notice": access_notice,
+        }
+        obj, created = BusinessAppAccess.objects.update_or_create(
+            business=business,
+            application=application,
+            is_deleted=False,
+            defaults=defaults,
+        )
+        return Response(
+            app_access_state(business, application),
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )

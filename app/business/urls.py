@@ -5,6 +5,7 @@ from .views import (
     BusinessViewSet,
     CollaboratorViewSet,
     IndustryViewSet,
+    InternalBusinessAppAccessView,
     InternalCollaboratorView,
 )
 
@@ -20,6 +21,11 @@ urlpatterns = [
         "internal/collaborators/",
         InternalCollaboratorView.as_view(),
         name="internal_collaborator",
+    ),
+    path(
+        "internal/business-app-access/",
+        InternalBusinessAppAccessView.as_view(),
+        name="internal_business_app_access",
     ),
     path("", include(router.urls)),
 ]

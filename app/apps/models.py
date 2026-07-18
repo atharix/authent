@@ -17,8 +17,29 @@ class Application(models.Model):
     """
 
     name = models.CharField(max_length=255, unique=True, verbose_name="Name")
+    code = models.SlugField(
+        max_length=50,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name="Code",
+        help_text=(
+            "Identificador estable del producto (p.ej. 'metis', 'atlas', 'delta'). "
+            "Se usa para la autorización por producto; comparar por 'code' es más "
+            "robusto que por 'name'."
+        ),
+    )
     description = models.TextField(blank=True, verbose_name="Description")
     is_active = models.BooleanField(default=True, verbose_name="Active")
+    enforce_app_access = models.BooleanField(
+        default=False,
+        verbose_name="Enforce app access",
+        help_text=(
+            "Si está activo, se rechaza en el login (y en cada request) a los "
+            "usuarios cuya(s) empresa(s) no tienen una licencia válida de este "
+            "producto. Actívalo por producto tras hacer el backfill de accesos."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")
 

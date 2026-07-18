@@ -26,6 +26,24 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["user_id"] = str(user.id)
         token["profile_type"] = user.profile_type
 
+        # Acceso por producto (fuente de verdad: business.BusinessAppAccess).
+        # Se hornea el conjunto de TODOS los productos del usuario (get_token no tiene
+        # request, así que no sabe cuál pregunta). Cada producto comprueba su propio
+        # code contra esta lista. Import diferido para evitar ciclos de carga de apps.
+        # Defensivo: si algo fallara, NO romper el login de ningún producto (Atlas en
+        # producción incluido) — degradar a lista vacía.
+        try:
+            from business.access import valid_app_codes_for_user
+
+            token["app_access"] = valid_app_codes_for_user(user)
+        except Exception:  # noqa: BLE001
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "No se pudo calcular app_access para el token", exc_info=True
+            )
+            token["app_access"] = []
+
         return token
 
     @classmethod
