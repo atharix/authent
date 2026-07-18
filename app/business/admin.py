@@ -1,7 +1,7 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
-from .models import Business, Collaborator, Industry
+from .models import Business, BusinessAppAccess, Collaborator, Industry
 
 
 @admin.register(Business)
@@ -36,3 +36,27 @@ class CollaboratorAdmin(ModelAdmin):
     search_fields = ["user__email", "business__name", "title"]
     ordering = ["-joined_at"]
     autocomplete_fields = ["user", "business", "role"]
+
+
+@admin.register(BusinessAppAccess)
+class BusinessAppAccessAdmin(ModelAdmin):
+    """Provisión de licencias por empresa↔producto (la fuente de verdad del acceso)."""
+
+    list_display = [
+        "business",
+        "application",
+        "license_type",
+        "is_enabled",
+        "expires_at",
+        "max_users",
+        "is_valid",
+        "created_at",
+    ]
+    list_filter = ["application", "license_type", "is_enabled"]
+    search_fields = ["business__name", "application__name", "application__code"]
+    ordering = ["-created_at"]
+    autocomplete_fields = ["business", "application"]
+
+    @admin.display(boolean=True, description="Válido")
+    def is_valid(self, obj):
+        return obj.is_valid

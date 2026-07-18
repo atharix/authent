@@ -1,8 +1,19 @@
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import models
+from django.utils import timezone
 
 from core.models import BaseModel
+
+
+class LicenseType(models.TextChoices):
+    """Qué tiene contratado una empresa para un producto. `NONE` es el default y
+    **bloquea** el acceso: una empresa sin licencia no entra hasta que se provisiona."""
+
+    NONE = "none", "Sin licencia"
+    TRIAL = "trial", "Prueba"
+    STANDARD = "standard", "Estándar"
+    ENTERPRISE = "enterprise", "Enterprise"
 
 
 class Industry(BaseModel):
@@ -142,3 +153,86 @@ class Collaborator(BaseModel):
     def __str__(self) -> str:
         role_name = self.role.name if self.role else "no role"
         return f"{self.user} @ {self.business} ({role_name})"
+
+
+class BusinessAppAccess(BaseModel):
+    """Qué producto (Application) tiene contratado una empresa (Business), con su licencia.
+
+    **Fuente de verdad del acceso por empresa↔producto** para todo el ecosistema
+    (Metis / Atlas / Delta). Absorbe el licenciamiento que antes vivía dentro de
+    cada producto (tipo, vencimiento, asientos, on/off).
+
+    **Se deniega por defecto**: sin una fila válida para (empresa, producto), la
+    empresa no tiene acceso a ese producto. Un olvido deja la puerta cerrada.
+    """
+
+    business = models.ForeignKey(
+        Business,
+        on_delete=models.CASCADE,
+        related_name="app_accesses",
+    )
+    application = models.ForeignKey(
+        "apps.Application",
+        on_delete=models.PROTECT,
+        related_name="business_accesses",
+    )
+    license_type = models.CharField(
+        max_length=20,
+        choices=LicenseType.choices,
+        default=LicenseType.NONE,
+        help_text="«Sin licencia» bloquea el acceso de toda la empresa a este producto.",
+    )
+    is_enabled = models.BooleanField(
+        default=True,
+        help_text=(
+            "Interruptor manual, por encima de la licencia. Desactívalo para cortar "
+            "en seco el acceso aunque la licencia siga vigente."
+        ),
+    )
+    expires_at = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Pasada esta fecha la empresa queda bloqueada. Vacío = no caduca.",
+    )
+    max_users = models.PositiveIntegerField(
+        default=0,
+        help_text="Asientos contratados para este producto. 0 = no cabe nadie nuevo.",
+    )
+    access_notice = models.TextField(
+        blank=True,
+        default="",
+        help_text="Mensaje opcional para la pantalla de bloqueo del producto.",
+    )
+
+    class Meta:
+        db_table = "business_app_access"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "application"],
+                condition=models.Q(is_deleted=False),
+                name="uniq_business_application_active",
+            ),
+        ]
+        verbose_name = "Acceso a producto"
+        verbose_name_plural = "Accesos a productos"
+
+    def __str__(self) -> str:
+        return f"{self.business} → {self.application} ({self.license_type})"
+
+    @property
+    def is_expired(self) -> bool:
+        """Vacío = no caduca. Vence al TERMINAR el día indicado (`<`, no `<=`)."""
+        if self.expires_at is None:
+            return False
+        return self.expires_at < timezone.localdate()
+
+    @property
+    def is_valid(self) -> bool:
+        """Acceso efectivo: licencia asignada (≠ NONE), habilitada y no vencida."""
+        return (
+            not self.is_deleted
+            and self.license_type != LicenseType.NONE
+            and self.is_enabled
+            and not self.is_expired
+        )

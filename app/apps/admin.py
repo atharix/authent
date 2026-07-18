@@ -13,9 +13,18 @@ class APIKeyInline(admin.TabularInline):
 
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ("name", "is_active", "created_at", "api_key_count")
-    list_filter = ("is_active",)
-    search_fields = ("name", "description")
+    list_display = (
+        "name",
+        "code",
+        "is_active",
+        "enforce_app_access",
+        "created_at",
+        "api_key_count",
+    )
+    list_filter = ("is_active", "enforce_app_access")
+    list_editable = ("enforce_app_access",)
+    search_fields = ("name", "code", "description")
+    prepopulated_fields = {"code": ("name",)}
     inlines = [APIKeyInline]
 
     @admin.display(description="API Keys")
