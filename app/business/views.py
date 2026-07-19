@@ -300,12 +300,12 @@ class InternalCollaboratorView(APIView):
         if not (
             application
             and (
-                application.code in ("atlas", "metis")
-                or application.name in ("Atlas", "Metis")
+                application.code in ("atlas", "metis", "prometheus")
+                or application.name in ("Atlas", "Metis", "Prometheus")
             )
         ):
             return Response(
-                {"error": "Forbidden — solo un servicio de producto (Atlas/Metis) puede llamar este endpoint."},
+                {"error": "Forbidden — solo un servicio de producto (Atlas/Metis/Prometheus) puede llamar este endpoint."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
