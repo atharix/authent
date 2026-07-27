@@ -69,11 +69,17 @@ def check_terms_acceptance(request):
     Returns one entry per kind (terms + privacy) when no kind filter is set.
     """
     application = request.query_params.get("application")
+    code = request.query_params.get("code")
     kind = request.query_params.get("kind")
 
     queryset = TermsAndConditions.objects.filter(is_active=True)
     if application:
         queryset = queryset.filter(application_id=application)
+    # Filtrar por código es lo que evita que un usuario de un producto tenga que
+    # aceptar los documentos de otro: sin esto, `check` devuelve los activos de
+    # TODAS las aplicaciones y el gate de Metis pediría aceptar los de Prometheus.
+    if code:
+        queryset = queryset.filter(application__code=code)
     if kind:
         queryset = queryset.filter(kind=kind)
 
