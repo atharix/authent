@@ -1,3 +1,4 @@
+from .account import DeleteAccountView
 from .auth import TokenVerifyView, UserLoginView, UserLogoutView, UserProfileView
 from .password import (
     PasswordChangeView,

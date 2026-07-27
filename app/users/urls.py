@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
+    DeleteAccountView,
     PasswordChangeView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
@@ -36,6 +37,8 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("profile/", UserProfileView.as_view(), name="profile"),
     path("update-profile/", UserUpdateView.as_view(), name="update_profile"),
+    # Baja de cuenta (Art. 17). La llaman los productos tras suprimir lo suyo.
+    path("delete-account/", DeleteAccountView.as_view(), name="delete_account"),
     path("verify-token/", TokenVerifyView.as_view(), name="verify_token"),
     # --- Registration ---
     path("register/", UserRegistrationView.as_view(), name="register"),
