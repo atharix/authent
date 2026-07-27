@@ -11,7 +11,8 @@ class TermsAndConditionsViewSet(viewsets.ModelViewSet):
     """
     CRUD over legal documents (terms / privacy policies) tied to applications.
 
-    - List/retrieve: public (AllowAny). Filter via ?application=<id>&kind=<terms|privacy>&is_active=true.
+    - List/retrieve: public (AllowAny). Filter via ?application=<id> or ?code=<app code>,
+      plus &kind=<terms|privacy>&is_active=true.
     - Create/Update/Delete: admin only.
     """
 
@@ -33,6 +34,11 @@ class TermsAndConditionsViewSet(viewsets.ModelViewSet):
 
         if application:
             queryset = queryset.filter(application_id=application)
+        # Por código además de por id: así los productos piden sus documentos con
+        # `?code=metis` en vez de llevar a fuego un id que solo existe aquí.
+        code = params.get("code")
+        if code:
+            queryset = queryset.filter(application__code=code)
         if kind:
             queryset = queryset.filter(kind=kind)
         if is_active is not None and is_active != "":
