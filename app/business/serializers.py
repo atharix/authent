@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from rest_framework import serializers
 
 from .models import Business, Collaborator, Industry
@@ -106,7 +107,16 @@ class CollaboratorSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source="user.email", read_only=True)
     user_full_name = serializers.CharField(source="user.full_name", read_only=True)
     business_name = serializers.CharField(source="business.name", read_only=True)
-    role_name = serializers.CharField(source="role.name", read_only=True)
+    # Escribible: los productos identifican el rol por nombre, no por el PK
+    # entero del Group (que es un detalle interno de esta base). Un nombre
+    # inexistente ahora es error de validación — antes se ignoraba en
+    # silencio y el PATCH devolvía 200 sin cambiar nada.
+    role_name = serializers.SlugRelatedField(
+        source="role",
+        slug_field="name",
+        queryset=Group.objects.all(),
+        required=False,
+    )
 
     class Meta:
         model = Collaborator
@@ -129,5 +139,4 @@ class CollaboratorSerializer(serializers.ModelSerializer):
             "user_email",
             "user_full_name",
             "business_name",
-            "role_name",
         ]
