@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Código de acceso – {{ site_name }}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#eef1f6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+  <!-- Preheader: línea de vista previa en la bandeja, oculta en el cuerpo -->
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
+    Código de verificación para entrar en {{ site_name }}. Caduca en {{ expires_minutes }} minutos.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#eef1f6;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+
+        <!-- Tarjeta -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden;
+                      box-shadow:0 2px 12px rgba(15,23,42,0.08);">
+
+          <!-- Cabecera -->
+          <tr>
+            <td style="background:#111827;padding:22px 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.4px;">
+                    {{ site_name|lower }}
+                  </td>
+                  <td align="right" style="font-size:12px;color:#00d4aa;letter-spacing:0.4px;">
+                    Verificación en dos pasos
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Cuerpo -->
+          <tr>
+            <td style="padding:40px 40px 8px;">
+
+              <h1 style="margin:0 0 12px;font-size:26px;font-weight:700;color:#111827;line-height:1.25;">
+                Tu código de acceso
+              </h1>
+
+              <p style="margin:0 0 28px;font-size:15px;color:#4B5563;line-height:1.6;">
+                Hola, {{ user_name }}.<br>
+                Alguien está iniciando sesión en tu cuenta de {{ site_name }}. Escribe este
+                código en la pantalla para terminar de entrar.
+              </p>
+
+              <!-- Código -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center"
+                      style="background:#f0fdfb;border:1px solid #99f6e4;border-radius:10px;
+                             padding:26px 16px 28px;">
+                    <div style="font-size:11px;font-weight:700;color:#0f766e;text-transform:uppercase;
+                                letter-spacing:1.5px;margin-bottom:14px;">
+                      Código de acceso
+                    </div>
+                    <div style="font-size:44px;font-weight:700;letter-spacing:14px;text-indent:14px;
+                                color:#0d9488;font-family:'Courier New',Courier,monospace;line-height:1;">
+                      {{ pin_code }}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:20px 0 0;font-size:13px;color:#6B7280;line-height:1.6;">
+                Caduca en <strong style="color:#374151;">{{ expires_minutes }} minutos</strong>
+                y admite un máximo de <strong style="color:#374151;">{{ max_attempts }} intentos</strong>.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Separador -->
+          <tr>
+            <td style="padding:28px 40px 0;">
+              <div style="border-top:1px solid #E5E7EB;font-size:0;line-height:0;">&nbsp;</div>
+            </td>
+          </tr>
+
+          <!-- Seguridad -->
+          <tr>
+            <td style="padding:24px 40px 0;">
+              <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:#9CA3AF;
+                        text-transform:uppercase;letter-spacing:1.2px;">
+                Seguridad de tu cuenta
+              </p>
+              <ul style="margin:0;padding-left:18px;font-size:14px;color:#4B5563;line-height:1.7;">
+                <li>Úsalo solo si eres tú quien está entrando ahora mismo.</li>
+                <li>Nunca compartas este código con nadie.</li>
+                <li>{{ site_name }} jamás te pedirá este código por teléfono o correo.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <!-- Aviso -->
+          <tr>
+            <td style="padding:24px 40px 36px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background:#fef2f2;border-left:3px solid #f87171;border-radius:0 8px 8px 0;
+                             padding:14px 16px;font-size:13px;color:#7f1d1d;line-height:1.6;">
+                    Si no has sido tú, alguien conoce tu contraseña: entra en {{ site_name }}
+                    y cámbiala cuanto antes.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Tarjeta -->
+
+        <!-- Pie -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:520px;">
+          <tr>
+            <td align="center" style="padding:20px 24px 0;font-size:12px;color:#9CA3AF;line-height:1.6;">
+              Este es un correo automático, por favor no respondas a este mensaje.<br>
+              &copy; 2026 {{ site_name }}
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

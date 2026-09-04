@@ -153,6 +153,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         # Mark reset as used
         reset.mark_as_used()
+        revoke_trust_after_password_change(user)
 
         return user
 
@@ -185,6 +186,7 @@ class PasswordChangeSerializer(serializers.Serializer):
         """Change user password."""
         self.user.set_password(self.validated_data["new_password"])
         self.user.save()
+        revoke_trust_after_password_change(self.user)
         return self.user
 
 
@@ -227,5 +229,20 @@ class SimplePasswordResetSerializer(serializers.Serializer):
 
         # Mark reset as used
         reset.mark_as_used()
+        revoke_trust_after_password_change(user)
 
         return user
+
+
+def revoke_trust_after_password_change(user):
+    """Un cambio de contraseña tira todos los equipos de confianza.
+
+    Sin esto, quien controla el buzón resetea la contraseña y conserva un
+    dispositivo que se salta el segundo factor de forma renovable.
+    """
+    from ..models.mfa import EmailOtp, TrustedDevice
+
+    TrustedDevice.revoke_all_for(user)
+    EmailOtp.objects.filter(user=user, status=EmailOtp.PENDING).update(
+        status=EmailOtp.CANCELLED
+    )

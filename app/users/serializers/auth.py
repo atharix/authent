@@ -25,6 +25,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["email_verified"] = user.email_verified
         token["user_id"] = str(user.id)
         token["profile_type"] = user.profile_type
+        # El cliente lo usa para no plantarle el muro de la passkey a un revisor
+        # de tienda. Los términos y el onboarding NO se saltan: es lo que evalúan.
+        token["is_review_account"] = user.is_review_account
 
         # Acceso por producto (fuente de verdad: business.BusinessAppAccess).
         # Se hornea el conjunto de TODOS los productos del usuario (get_token no tiene
@@ -57,6 +60,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return {
             "id": str(user.id),
             "email": user.email,
+            "is_review_account": user.is_review_account,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "full_name": user.get_full_name(),

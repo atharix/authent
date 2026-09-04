@@ -6,7 +6,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from ..models.mfa import TrustedDevice
 from ..serializers import CustomTokenObtainPairSerializer, UserProfileSerializer
+from ..utils.mfa import (
+    application_code_of,
+    challenge_payload,
+    mfa_enforced,
+    push_challenge_payload,
+    resolve_push_approver,
+    start_email_otp,
+    start_push_approval,
+)
 
 
 @extend_schema_view(
@@ -20,6 +30,158 @@ class UserLoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
+        """Login por contraseña.
+
+        Con MFA activo en el producto que llama, esto NO devuelve tokens: valida
+        la contraseña, abre el desafío y lo devuelve. Los tokens se acuñan en
+        ``/mfa/verify/`` (código) o en ``/mfa/approval/status/`` (app). Sin MFA
+        activo, el camino es el de siempre, byte a byte, para no tocar a los
+        productos que aún no lo implementan.
+        """
+        if mfa_enforced(request):
+            return self._login_with_mfa(request)
+
+        return self._login_and_issue_tokens(request, *args, **kwargs)
+
+    # ── Camino con segundo factor ───────────────────────────────────────────
+    def _login_with_mfa(self, request):
+        from django.contrib.auth import authenticate
+
+        from users.utils.session import create_session
+
+        email = (request.data.get("email") or "").strip()
+        password = request.data.get("password") or ""
+        user = authenticate(request=request, email=email, password=password)
+
+        if user is None or not user.is_active:
+            # Mismo cuerpo que devuelve SimpleJWT: para el cliente, una
+            # contraseña incorrecta se sigue viendo exactamente igual.
+            return Response(
+                {
+                    "detail": "No active account found with the given credentials",
+                    "code": "no_active_account",
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        denied = self._app_access_denied(request, user)
+        if denied is not None:
+            # Se rechaza ANTES de mandar el correo: quien no tiene acceso al
+            # producto no debe recibir un código que no le va a servir.
+            return denied
+
+        if user.is_review_account:
+            # Cuenta de revisión de tienda: entra con contraseña. Se deja rastro
+            # en el log porque es la única vía por la que alguien entra a Atlas
+            # sin segundo factor.
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "Login sin segundo factor por cuenta de revisión: %s (hasta %s, motivo: %s)",
+                user.email,
+                user.review_account_until,
+                user.review_account_reason or "sin motivo",
+            )
+            return self._issue_session(request, user)
+
+        device = TrustedDevice.resolve(
+            request.data.get("device_token"), user, application_code_of(request)
+        )
+        if device is not None:
+            device.touch(
+                ip=self._client_ip(request),
+                user_agent=request.META.get("HTTP_USER_AGENT", ""),
+            )
+            return self._issue_session(request, user)
+
+        approver = resolve_push_approver(user, request)
+        if approver is not None:
+            approval = start_push_approval(user, approver, request)
+            return Response(
+                push_challenge_payload(approval, approver),
+                status=status.HTTP_200_OK,
+            )
+
+        otp, outcome = start_email_otp(user, request)
+
+        if outcome == "rate_limited":
+            return Response(
+                {
+                    "detail": (
+                        "Has pedido demasiados códigos. Espera un rato antes de "
+                        "volver a intentarlo."
+                    ),
+                    "code": "mfa_rate_limited",
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        if outcome == "failed":
+            return Response(
+                {
+                    "detail": "No pudimos enviarte el código. Inténtalo de nuevo.",
+                    "code": "mfa_email_failed",
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(challenge_payload(otp, user), status=status.HTTP_200_OK)
+
+    def _issue_session(self, request, user):
+        """Acuña los tokens y registra la sesión. Único punto de emisión del
+        camino con MFA: lo comparten la exención y el equipo de confianza."""
+        from users.utils.session import create_session
+
+        payload = CustomTokenObtainPairSerializer.build_response_for_user(user)
+        try:
+            decoded = jwt.decode(
+                payload["access"], settings.SECRET_KEY, algorithms=["HS256"]
+            )
+            create_session(user, decoded, payload["refresh"], request)
+        except Exception as exc:  # noqa: BLE001
+            import logging
+
+            logging.getLogger(__name__).error(
+                "Failed to create session record (MFA bypass path): %s", exc
+            )
+        return Response(payload, status=status.HTTP_200_OK)
+
+    def _app_access_denied(self, request, user):
+        """Mismo gate de producto que el camino clásico, sin token que decodificar."""
+        application = getattr(request, "application", None)
+        if application is None or not getattr(application, "enforce_app_access", False):
+            return None
+        if user.is_superuser:
+            return None
+        try:
+            from business.access import valid_app_codes_for_user
+
+            granted = valid_app_codes_for_user(user) or []
+        except Exception:  # noqa: BLE001
+            # Igual que en get_token: si el cálculo falla no se echa a nadie.
+            return None
+        if application.code in granted:
+            return None
+        return Response(
+            {
+                "detail": (
+                    f"No tienes acceso a {application.name}. "
+                    "Comunícate con el administrador de tu empresa para habilitarlo."
+                ),
+                "code": "no_app_access",
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    @staticmethod
+    def _client_ip(request):
+        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR")
+
+    # ── Camino clásico (productos sin MFA) ──────────────────────────────────
+    def _login_and_issue_tokens(self, request, *args, **kwargs):
         """Login user and create session record."""
 
         from users.utils.session import create_session

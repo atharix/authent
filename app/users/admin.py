@@ -21,6 +21,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin, ImagePreviewListDisplayMixin):
     ]
     list_filter = [
         "is_active",
+        "review_account_until",
         "is_staff",
         "is_superuser",
         "profile_type",
@@ -28,6 +29,25 @@ class UserAdmin(BaseUserAdmin, ModelAdmin, ImagePreviewListDisplayMixin):
         "gender",
     ]
     search_fields = ["email", "first_name", "last_name", "phone_number"]
+    readonly_fields_extra = ("review_account_set_by", "review_account_set_at")
+
+    def save_model(self, request, obj, form, change):
+        """Sella quién abrió la ventana de revisión y la recorta a 30 días."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        if "review_account_until" in getattr(form, "changed_data", []):
+            if obj.review_account_until:
+                tope = timezone.now() + timedelta(days=30)
+                if obj.review_account_until > tope:
+                    obj.review_account_until = tope
+                obj.review_account_set_by = request.user
+                obj.review_account_set_at = timezone.now()
+            else:
+                obj.review_account_set_by = None
+                obj.review_account_set_at = None
+        super().save_model(request, obj, form, change)
     ordering = ["first_name", "last_name"]
     readonly_fields = ["date_joined", "last_login", "avatar_preview"]
 
@@ -64,6 +84,25 @@ class UserAdmin(BaseUserAdmin, ModelAdmin, ImagePreviewListDisplayMixin):
                     "is_superuser",
                     "groups",
                     "user_permissions",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Cuenta de revisión de tienda",
+            {
+                "fields": (
+                    "review_account_until",
+                    "review_account_reason",
+                    "review_account_set_by",
+                    "review_account_set_at",
+                ),
+                "description": (
+                    "Solo para las cuentas de demostración de App Store y Google "
+                    "Play, que no tienen acceso al buzón. Mientras la fecha esté "
+                    "en el futuro, la cuenta entra sin código y sin passkey; los "
+                    "términos y el resto de la app los ve igual que cualquiera. "
+                    "Máximo 30 días: si pones más, se recorta solo."
                 ),
                 "classes": ("collapse",),
             },

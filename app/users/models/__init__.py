@@ -114,6 +114,41 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField("Date joined", default=timezone.now)
     email_verified = models.BooleanField("Email verified", default=False)
 
+    # ── Cuenta de revisión de tienda ────────────────────────────────────────
+    # Los revisores de Apple y Google entran con una cuenta de demostración y NO
+    # tienen acceso a ese buzón: un código por correo les impide entrar y la app
+    # se rechaza por 2.1 (App Completeness). Esta ventana los deja pasar los dos
+    # muros que no pueden superar —el segundo factor y el alta de passkey— y
+    # NINGUNO más: los términos y condiciones, el onboarding y el producto los
+    # ven igual que cualquiera, porque es justo lo que están evaluando.
+    #
+    # Es una VENTANA y no un interruptor: una exención perpetua es una cuenta sin
+    # segundo factor que dentro de seis meses nadie recuerda que existe.
+    review_account_until = models.DateTimeField(
+        "Cuenta de revisión hasta",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text=(
+            "Mientras esta fecha esté en el futuro, la cuenta entra sin código y "
+            "sin passkey. Máximo 30 días; déjalo vacío para desactivarlo."
+        ),
+    )
+    review_account_reason = models.CharField(
+        "Motivo", max_length=200, blank=True, help_text="Ej.: revisión iOS 1.4.0"
+    )
+    review_account_set_by = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        verbose_name="Activada por",
+    )
+    review_account_set_at = models.DateTimeField(
+        "Activada el", null=True, blank=True
+    )
+
     objects = CustomUserManager()
 
     USERNAME_FIELD = "email"
@@ -135,12 +170,21 @@ class User(AbstractBaseUser, PermissionsMixin):
     def full_name(self):
         return self.get_full_name()
 
+    @property
+    def is_review_account(self):
+        """¿Sigue viva la ventana de revisión de tienda?"""
+        return (
+            self.review_account_until is not None
+            and self.review_account_until > timezone.now()
+        )
+
     def get_avatar_url(self):
         if self.avatar:
             return self.avatar.url
         return None
 
 
+from .mfa import EmailOtp, LoginApproval, PushApprover, TrustedDevice  # noqa
 from .password_reset import PasswordReset  # noqa
 from .session import UserSession  # noqa
 from .terms import TermsAndConditions, UserTermsAcceptance  # noqa
@@ -149,6 +193,10 @@ __all__ = [
     "User",
     "UserSession",
     "PasswordReset",
+    "EmailOtp",
+    "TrustedDevice",
+    "PushApprover",
+    "LoginApproval",
     "TermsAndConditions",
     "UserTermsAcceptance",
 ]

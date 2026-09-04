@@ -1,0 +1,22 @@
+{{ site_name }} - Código de acceso
+
+Hola {{ user_name }},
+
+Alguien está iniciando sesión en tu cuenta de {{ site_name }}.
+
+Tu código de acceso: {{ pin_code }}
+
+Escribe este código de {{ code_length }} dígitos en la pantalla para entrar.
+
+INFORMACIÓN IMPORTANTE DE SEGURIDAD:
+- Este código expira en {{ expires_minutes }} minutos
+- Admite un máximo de {{ max_attempts }} intentos
+- Úsalo solo si eres tú quien está entrando ahora mismo
+- Nunca compartas este código con nadie
+- {{ site_name }} jamás te pedirá este código por teléfono o correo
+
+Si no has sido tú, alguien conoce tu contraseña: cámbiala cuanto antes.
+
+---
+Equipo de {{ site_name }}
+Este es un mensaje automático, por favor no respondas a este correo.

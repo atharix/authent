@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db.models import Count, Q
@@ -26,7 +27,12 @@ class UserAdminSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
-    password = serializers.CharField(write_only=True, required=False, min_length=8)
+    # Alineado con AUTH_PASSWORD_VALIDATORS (roadmap de seguridad §0.4): un
+    # alta creada desde el panel de administración no debe poder saltarse la
+    # política que se exige a los usuarios finales.
+    password = serializers.CharField(
+        write_only=True, required=False, min_length=settings.PASSWORD_MIN_LENGTH
+    )
 
     class Meta:
         model = User
@@ -84,6 +90,13 @@ class UserAdminSerializer(serializers.ModelSerializer):
         if password:
             instance.set_password(password)
         instance.save()
+        if password:
+            # Igual que en los tres caminos de cambio de contraseña del propio
+            # usuario: si un admin la cambia, los equipos que se saltaban el
+            # segundo factor dejan de valer.
+            from users.serializers.password import revoke_trust_after_password_change
+
+            revoke_trust_after_password_change(instance)
         if groups is not None:
             instance.groups.set(groups)
         return instance

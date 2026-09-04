@@ -4,6 +4,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
     DeleteAccountView,
+    MfaResendView,
+    MfaVerifyView,
     PasswordChangeView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
@@ -19,6 +21,13 @@ from .views import (
     check_terms_acceptance,
 )
 from .views.groups import GroupViewSet
+from .views.mfa import (
+    LoginApprovalViewSet,
+    MfaApprovalFallbackView,
+    MfaApprovalStatusView,
+    PushApproverViewSet,
+    TrustedDeviceViewSet,
+)
 from .views.session import UserSessionViewSet
 from .views.users_admin import UsersAdminViewSet
 
@@ -26,6 +35,15 @@ app_name = "auth"
 
 router = DefaultRouter()
 router.register(r"sessions", UserSessionViewSet, basename="session")
+router.register(
+    r"trusted-devices", TrustedDeviceViewSet, basename="trusted-device"
+)
+router.register(
+    r"mfa/approvals", LoginApprovalViewSet, basename="login-approval"
+)
+router.register(
+    r"mfa/approvers", PushApproverViewSet, basename="push-approver"
+)
 router.register(r"users", UsersAdminViewSet, basename="user-admin")
 router.register(r"groups", GroupViewSet, basename="group")
 router.register(r"terms", TermsAndConditionsViewSet, basename="terms")
@@ -40,6 +58,21 @@ urlpatterns = [
     # Baja de cuenta (Art. 17). La llaman los productos tras suprimir lo suyo.
     path("delete-account/", DeleteAccountView.as_view(), name="delete_account"),
     path("verify-token/", TokenVerifyView.as_view(), name="verify_token"),
+    # --- Segundo factor por correo (paso 2 del login) ---
+    path("mfa/verify/", MfaVerifyView.as_view(), name="mfa_verify"),
+    path("mfa/resend/", MfaResendView.as_view(), name="mfa_resend"),
+    # --- Aprobación desde la app (paso 2 cuando el factor es el teléfono) ---
+    path(
+        "mfa/approval/status/",
+        MfaApprovalStatusView.as_view(),
+        name="mfa_approval_status",
+    ),
+    # Salida cuando el teléfono ya no está: el código vuelve al correo.
+    path(
+        "mfa/approval/fallback/",
+        MfaApprovalFallbackView.as_view(),
+        name="mfa_approval_fallback",
+    ),
     # --- Registration ---
     path("register/", UserRegistrationView.as_view(), name="register"),
     # --- Password management ---

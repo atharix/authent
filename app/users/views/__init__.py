@@ -1,5 +1,14 @@
 from .account import DeleteAccountView
 from .auth import TokenVerifyView, UserLoginView, UserLogoutView, UserProfileView
+from .mfa import (
+    LoginApprovalViewSet,
+    MfaApprovalFallbackView,
+    MfaApprovalStatusView,
+    MfaResendView,
+    MfaVerifyView,
+    PushApproverViewSet,
+    TrustedDeviceViewSet,
+)
 from .password import (
     PasswordChangeView,
     PasswordResetConfirmView,

@@ -40,6 +40,16 @@ class Application(models.Model):
             "producto. Actívalo por producto tras hacer el backfill de accesos."
         ),
     )
+    enforce_mfa = models.BooleanField(
+        default=False,
+        verbose_name="Enforce MFA",
+        help_text=(
+            "Si está activo, el login de este producto exige un segundo factor "
+            "por correo antes de emitir tokens. Actívalo solo cuando el frontal "
+            "del producto sepa manejar la respuesta de dos pasos "
+            "(mfa_required + /auth/mfa/verify/)."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")
 
