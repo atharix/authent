@@ -101,6 +101,18 @@ DATABASES = {
     }
 }
 
+# Política de contraseñas — Authent es la fuente de verdad de identidad para
+# Atlas, Metis y Prometheus, así que este bloque es el que manda. Endurecido el
+# 24-jul-2026 (roadmap de seguridad §0.4): antes eran 6 caracteres con los
+# validadores de diccionario comentados, es decir, se aceptaba `123456`.
+#
+# El mínimo de 12 sigue a NIST SP 800-63B, que prioriza longitud sobre reglas
+# de composición (mayúsculas/símbolos), y es lo que espera un cuestionario de
+# seguridad corporativo.
+#
+# Solo aplica a altas y cambios de contraseña: los usuarios existentes no se
+# invalidan. El camino fuerte sigue siendo la passkey (`webauthn_auth`); esto
+# endurece el camino alternativo por contraseña que convive con ella.
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -108,17 +120,23 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
         "OPTIONS": {
-            "min_length": 6,  # Reducir mínimo a 6 caracteres
+            "min_length": 12,
         },
     },
-    # Comentado para permitir contraseñas simples
-    # {
-    #     "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    # },
-    # {
-    #     "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    # },
+    {
+        # Bloquea las 20.000 contraseñas más filtradas (`123456`, `password`…).
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
+
+# Mismo mínimo, expuesto como constante para los serializers y formularios que
+# declaran `min_length` a mano. Debe seguir a MinimumLengthValidator de arriba.
+# NO usarlo en el login: rechazaría a usuarios legítimos con contraseñas
+# anteriores más cortas, que siguen siendo válidas hasta que las cambien.
+PASSWORD_MIN_LENGTH = 12
 
 # Internationalization
 LANGUAGE_CODE = "es"
@@ -360,6 +378,31 @@ AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="eu-north-1")
 AWS_DEFAULT_ACL = None
 AWS_S3_FILE_OVERWRITE = False
 
+# ── Backup de base de datos a S3 ────────────────────────────────────────────
+# Bucket, credenciales y ciclo de vida separados de los de media a propósito:
+# si comprometen la app, no deben poder tocar el histórico de backups.
+#
+# PRIMERA barrera fail-closed: `default=False`. Cualquier entorno que no
+# declare la bandera explícitamente queda desactivado. La SEGUNDA es que el
+# beat solo se registra en `prod.py`; la TERCERA, la comprobación dentro de
+# la propia task (`core/backup.py::run_database_backup`). Sin esto, un
+# `celery_beat` de desarrollo volcaría su BD al bucket de producción.
+DB_BACKUP_ENABLED = env("DB_BACKUP_ENABLED", default=False, cast=bool)
+DB_BACKUP_BUCKET = env("DB_BACKUP_BUCKET", default="atharix-authent-backups-prod")
+DB_BACKUP_PREFIX = env("DB_BACKUP_PREFIX", default="postgres/")
+DB_BACKUP_AWS_REGION = env("DB_BACKUP_AWS_REGION", default=AWS_S3_REGION_NAME)
+# Credenciales DEDICADAS (IAM con s3:PutObject, SIN s3:DeleteObject).
+# No hay fallback a AWS_ACCESS_KEY_ID: es intencional (ver core/backup.py).
+DB_BACKUP_AWS_ACCESS_KEY_ID = env("DB_BACKUP_AWS_ACCESS_KEY_ID", default="")
+DB_BACKUP_AWS_SECRET_ACCESS_KEY = env("DB_BACKUP_AWS_SECRET_ACCESS_KEY", default="")
+DB_BACKUP_TIMEOUT_SECONDS = env("DB_BACKUP_TIMEOUT_SECONDS", default=3600, cast=int)
+# Edad máxima tolerada del backup más reciente antes de alertar. 26h da margen
+# a un retraso puntual del beat sin dejar pasar un día entero en silencio.
+DB_BACKUP_MAX_AGE_HOURS = env("DB_BACKUP_MAX_AGE_HOURS", default=26, cast=int)
+DB_BACKUP_ALERT_EMAILS = env.list("DB_BACKUP_ALERT_EMAILS", default=[])
+DB_BACKUP_PRODUCT_NAME = "Authent"
+
+
 if USE_S3 and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
     STORAGES = {
         "default": {"BACKEND": "config.storage_backends.MediaStorage"},
@@ -388,3 +431,8 @@ ATLAS_BRIDGE_API_KEY = env("ATLAS_BRIDGE_API_KEY", default="")
 ATLAS_BRIDGE_ENABLED = env.bool("ATLAS_BRIDGE_ENABLED", default=False)
 ATLAS_BRIDGE_TIMEOUT = env.float("ATLAS_BRIDGE_TIMEOUT", default=10.0)
 ATLAS_BRIDGE_MAX_RETRIES = env.int("ATLAS_BRIDGE_MAX_RETRIES", default=3)
+
+# ─── Aprobación de login desde la app (segundo factor por push) ────────────
+# Apagado hasta que las apps estén publicadas. Con esto en False, un aprobador
+# enrolado tampoco cambia nada: el login sigue cayendo al código por correo.
+PUSH_APPROVAL_ENABLED = env.bool("PUSH_APPROVAL_ENABLED", default=False)
