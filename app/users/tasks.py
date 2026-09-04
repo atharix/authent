@@ -6,15 +6,20 @@ from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
 
+# Marca de cara al usuario. Authent es el nombre interno del servicio de
+# identidad; quien recibe el correo tiene cuenta de Atharix, así que en los
+# correos nunca aparece "Authent".
+SITE_NAME = "Atharix"
+
 
 def send_password_reset_email(user_email, user_name, pin_code, hash_token):
     """Send password reset email with PIN code."""
-    subject = "Restablecer contraseña - Authent"
+    subject = "Restablecer contraseña - Atharix"
     context = {
         "user_name": user_name,
         "pin_code": pin_code,
         "hash_token": hash_token,
-        "site_name": "Authent",
+        "site_name": SITE_NAME,
     }
     html_message = render_to_string("auth/emails/password_reset.html", context)
     text_message = render_to_string("auth/emails/password_reset.txt", context)
@@ -36,14 +41,14 @@ def send_mfa_code_email(user, code, otp):
     pantalla del código, así que un envío diferido solo trasladaría el fallo a un
     punto donde ya no se lo podemos contar.
     """
-    subject = "Tu código de acceso - Authent"
+    subject = "Tu código de acceso - Atharix"
     context = {
         "user_name": user.get_full_name() or user.email,
         "pin_code": code,
         "code_length": otp.CODE_LENGTH,
         "expires_minutes": otp.TTL_SECONDS // 60,
         "max_attempts": otp.MAX_ATTEMPTS,
-        "site_name": "Authent",
+        "site_name": SITE_NAME,
     }
     html_message = render_to_string("auth/emails/mfa_code.html", context)
     text_message = render_to_string("auth/emails/mfa_code.txt", context)

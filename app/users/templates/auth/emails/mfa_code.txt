@@ -1,4 +1,4 @@
-{{ site_name }} - Código de acceso
+{{ site_name }} - Verificación en dos pasos
 
 Hola {{ user_name }},
 
@@ -7,16 +7,16 @@ Alguien está iniciando sesión en tu cuenta de {{ site_name }}.
 Tu código de acceso: {{ pin_code }}
 
 Escribe este código de {{ code_length }} dígitos en la pantalla para entrar.
+Caduca en {{ expires_minutes }} minutos y admite un máximo de {{ max_attempts }} intentos.
 
-INFORMACIÓN IMPORTANTE DE SEGURIDAD:
-- Este código expira en {{ expires_minutes }} minutos
-- Admite un máximo de {{ max_attempts }} intentos
-- Úsalo solo si eres tú quien está entrando ahora mismo
-- Nunca compartas este código con nadie
-- {{ site_name }} jamás te pedirá este código por teléfono o correo
+SEGURIDAD DE TU CUENTA
+- Úsalo solo si eres tú quien está entrando ahora mismo.
+- Nunca compartas este código con nadie.
+- {{ site_name }} jamás te pedirá este código por teléfono o correo.
 
-Si no has sido tú, alguien conoce tu contraseña: cámbiala cuanto antes.
+Si no has sido tú, alguien conoce tu contraseña: entra en {{ site_name }}
+y cámbiala cuanto antes.
 
 ---
-Equipo de {{ site_name }}
+{{ site_name }} - atharix.com
 Este es un mensaje automático, por favor no respondas a este correo.
